@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CSN Automação">
+<meta name="theme-color" content="#00c8ff">
+<meta name="description" content="Sistema de Relatórios Técnicos – Equipe de Automação CSN Mineração">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+<title>CSN Mineração – Automação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg-deep:  #020914;
+    --bg-card:  #080f1f;
+    --bg-panel: #0d1a2e;
+    --accent:   #00c8ff;
+    --accent2:  #0057ff;
+    --accent3:  #00ffa3;
+    --danger:   #ff4060;
+    --text:     #d0e8ff;
+    --text-dim: #5a7a99;
+    --border:   rgba(0,200,255,0.18);
+    --glow:     0 0 18px rgba(0,200,255,0.35);
+    --font-hd:  'Rajdhani', sans-serif;
+    --font-body:'Exo 2', sans-serif;
+    --font-mono:'Share Tech Mono', monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;background:var(--bg-deep);color:var(--text);font-family:var(--font-body);overflow-x:hidden}
+
+  /* ── INSTALL BANNER ── */
+  #install-banner{
+    display:none;position:fixed;bottom:0;left:0;right:0;z-index:9990;
+    background:linear-gradient(135deg,#061428,#0a1e3d);
+    border-top:2px solid var(--accent);
+    padding:14px 16px;
+    box-shadow:0 -4px 24px rgba(0,200,255,0.3);
+    animation:slide-up .4s ease;
+  }
+  @keyframes slide-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  #install-banner.show{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .banner-icon{width:48px;height:48px;border-radius:10px;border:1px solid var(--accent);flex-shrink:0;overflow:hidden}
+  .banner-icon img{width:100%;height:100%;object-fit:cover}
+  .banner-text{flex:1;min-width:160px}
+  .banner-text strong{font-family:var(--font-hd);font-size:1rem;font-weight:700;color:#fff;display:block}
+  .banner-text span{font-family:var(--font-mono);font-size:.7rem;color:var(--text-dim)}
+  .banner-btns{display:flex;gap:8px}
+  .btn-install{
+    background:linear-gradient(135deg,#0057ff,#00c8ff);
+    border:none;border-radius:8px;padding:10px 20px;
+    font-family:var(--font-hd);font-size:1rem;font-weight:700;
+    letter-spacing:1px;color:#fff;cursor:pointer;
+    box-shadow:0 2px 12px rgba(0,200,255,0.4);
+  }
+  .btn-dismiss{
+    background:transparent;border:1px solid rgba(0,200,255,0.3);
+    border-radius:8px;padding:10px 14px;
+    font-family:var(--font-mono);font-size:.8rem;color:var(--text-dim);cursor:pointer;
+  }
+
+  /* ── SPLASH ── */
+  #splash{
+    position:fixed;inset:0;z-index:9999;
+    background:radial-gradient(ellipse at 50% 40%,#061428 0%,#020914 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+    transition:opacity .6s ease;
+  }
+  #splash.fade{opacity:0;pointer-events:none}
+  .splash-ring{
+    width:160px;height:160px;border-radius:36px;
+    background:linear-gradient(135deg,#0a1e3d,#061228);
+    border:2px solid var(--accent);
+    box-shadow:0 0 40px rgba(0,200,255,.5),0 0 80px rgba(0,87,255,.3),inset 0 0 30px rgba(0,200,255,.1);
+    display:flex;align-items:center;justify-content:center;
+    animation:pulse-ring 2s ease-in-out infinite;overflow:hidden;
+  }
+  .splash-ring img{width:100%;height:100%;object-fit:cover;border-radius:34px}
+  @keyframes pulse-ring{
+    0%,100%{box-shadow:0 0 40px rgba(0,200,255,.5),0 0 80px rgba(0,87,255,.3)}
+    50%{box-shadow:0 0 60px rgba(0,200,255,.8),0 0 120px rgba(0,87,255,.5),0 0 160px rgba(0,255,163,.15)}
+  }
+  .splash-title{
+    font-family:var(--font-hd);font-size:2.2rem;font-weight:700;letter-spacing:4px;
+    text-transform:uppercase;
+    background:linear-gradient(90deg,#fff,var(--accent),#fff);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    animation:shimmer 2.5s linear infinite;background-size:200%;
+  }
+  @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+  .splash-sub{font-family:var(--font-mono);font-size:.85rem;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase}
+  .splash-bar{width:200px;height:3px;background:rgba(0,200,255,.15);border-radius:2px;overflow:hidden;margin-top:8px}
+  .splash-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));border-radius:2px;animation:load-bar 2.4s ease-out forwards}
+  @keyframes load-bar{from{width:0}to{width:100%}}
+  .splash-dots{display:flex;gap:8px}
+  .splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:blink .9s ease-in-out infinite}
+  .splash-dots span:nth-child(2){animation-delay:.3s}
+  .splash-dots span:nth-child(3){animation-delay:.6s}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+  /* ── APP ── */
+  #app{display:none;flex-direction:column;min-height:100vh}
+  #app.visible{display:flex}
+
+  /* ── TOPBAR ── */
+  .topbar{
+    position:sticky;top:0;z-index:100;
+    background:rgba(5,13,26,.95);border-bottom:1px solid var(--border);
+    backdrop-filter:blur(16px);
+    display:flex;align-items:center;gap:12px;padding:10px 16px;
+  }
+  .topbar-logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#0d1e38,#061228);border:1px solid var(--accent);box-shadow:var(--glow);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+  .topbar-logo img{width:100%;height:100%;object-fit:cover;border-radius:9px}
+  .topbar-info{flex:1}
+  .topbar-title{font-family:var(--font-hd);font-size:1.05rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff}
+  .topbar-sub{font-family:var(--font-mono);font-size:.65rem;color:var(--accent);letter-spacing:2px}
+  .topbar-date{font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);text-align:right}
+
+  /* ── CONTENT ── */
+  .content{flex:1;padding:16px;display:flex;flex-direction:column;gap:16px;max-width:860px;margin:0 auto;width:100%;padding-bottom:80px}
+
+  /* ── CARDS ── */
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+  .card-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:linear-gradient(90deg,rgba(0,200,255,.07),transparent);border-bottom:1px solid var(--border)}
+  .card-header .icon{width:32px;height:32px;border-radius:8px;background:rgba(0,200,255,.12);border:1px solid rgba(0,200,255,.3);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+  .card-header h2{font-family:var(--font-hd);font-size:1rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#fff}
+  .card-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+
+  /* ── INPUTS ── */
+  label{font-family:var(--font-mono);font-size:.72rem;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:5px}
+  input[type=text],input[type=date],textarea,select{width:100%;background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:.95rem;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:var(--glow)}
+  select option{background:#0a1525}
+  textarea{resize:vertical;min-height:90px;line-height:1.5}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.row2{grid-template-columns:1fr}}
+
+  /* ── PILLS ── */
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill-label{cursor:pointer;padding:8px 18px;border-radius:24px;border:1.5px solid rgba(0,200,255,.25);font-family:var(--font-hd);font-size:.9rem;font-weight:600;letter-spacing:1px;color:var(--text-dim);transition:all .2s;user-select:none}
+  .pill-label:hover{border-color:var(--accent);color:var(--accent)}
+  input[type=radio]:checked + .pill-label,input[type=checkbox]:checked + .pill-label{background:rgba(0,200,255,.15);border-color:var(--accent);color:var(--accent);box-shadow:var(--glow)}
+  input[type=radio],input[type=checkbox]{display:none}
+
+  /* ── PROCESS ── */
+  .process-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+  .process-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid rgba(0,200,255,.15);border-radius:8px;background:rgba(0,200,255,.03);cursor:pointer;transition:all .2s}
+  .process-item:hover{border-color:var(--accent);background:rgba(0,200,255,.08)}
+  .process-item input[type=checkbox]{display:block;width:16px;height:16px;accent-color:var(--accent);flex-shrink:0}
+  .process-item span{font-family:var(--font-body);font-size:.88rem;color:var(--text)}
+
+  /* ── ACTIVITY BLOCKS ── */
+  .activity-block{background:var(--bg-panel);border:1px solid rgba(0,200,255,.15);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;position:relative}
+  .activity-block .act-num{position:absolute;top:10px;right:12px;font-family:var(--font-mono);font-size:.7rem;color:var(--text-dim)}
+  .btn-remove{background:rgba(255,64,96,.12);border:1px solid rgba(255,64,96,.3);color:var(--danger);border-radius:6px;padding:6px 14px;font-family:var(--font-hd);font-size:.85rem;font-weight:600;letter-spacing:1px;cursor:pointer;align-self:flex-start;transition:all .2s}
+  .btn-remove:hover{background:rgba(255,64,96,.25);box-shadow:0 0 12px rgba(255,64,96,.3)}
+
+  /* ── PHOTO ── */
+  .photo-zone{border:2px dashed rgba(0,200,255,.25);border-radius:8px;padding:16px;text-align:center;cursor:pointer;background:rgba(0,200,255,.03);transition:all .2s;position:relative}
+  .photo-zone:hover{border-color:var(--accent);background:rgba(0,200,255,.07)}
+  .photo-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .photo-zone p{font-family:var(--font-mono);font-size:.75rem;color:var(--text-dim)}
+  .photo-zone .icon-upload{font-size:1.8rem;margin-bottom:6px}
+  .photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .photo-thumb{width:72px;height:72px;border-radius:6px;object-fit:cover;border:1px solid rgba(0,200,255,.3);box-shadow:var(--glow)}
+
+  /* ── COLLAB ── */
+  .collab-list{display:flex;flex-direction:column;gap:8px}
+  .collab-item{display:flex;gap:8px;align-items:center}
+  .collab-item input{flex:1}
+  .collab-item .btn-icon,.list-row .btn-icon{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,64,96,.3);background:rgba(255,64,96,.1);color:var(--danger);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+  .collab-item .btn-icon:hover,.list-row .btn-icon:hover{background:rgba(255,64,96,.25)}
+
+  /* ── LIST ROWS ── */
+  .list-rows{display:flex;flex-direction:column;gap:8px}
+  .list-row{display:flex;gap:8px;align-items:flex-start}
+  .list-row textarea{flex:1;min-height:60px}
+  .list-row .btn-icon{margin-top:2px;min-height:36px}
+
+  /* ── ADD BUTTON ── */
+  .btn-add{display:flex;align-items:center;gap:8px;background:rgba(0,200,255,.06);border:1.5px dashed rgba(0,200,255,.3);border-radius:8px;padding:10px 16px;cursor:pointer;font-family:var(--font-hd);font-size:.92rem;font-weight:600;letter-spacing:1px;color:var(--accent);transition:all .2s;width:100%;justify-content:center}
+  .btn-add:hover{background:rgba(0,200,255,.14);border-color:var(--accent);box-shadow:var(--glow)}
+
+  /* ── GENERATE ── */
+  .btn-generate{background:linear-gradient(135deg,#0057ff,#00c8ff);border:none;border-radius:12px;padding:16px;font-family:var(--font-hd);font-size:1.2rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;cursor:pointer;width:100%;transition:all .25s;box-shadow:0 4px 24px rgba(0,87,255,.4);position:relative;overflow:hidden}
+  .btn-generate::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:translateX(-100%);transition:transform .5s}
+  .btn-generate:hover::after{transform:translateX(100%)}
+  .btn-generate:hover{box-shadow:0 6px 32px rgba(0,200,255,.5);transform:translateY(-1px)}
+
+  /* ── DIVIDER ── */
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:4px 0}
+
+  /* ── TOAST ── */
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(0,200,255,.15);border:1px solid var(--accent);border-radius:10px;padding:12px 24px;font-family:var(--font-hd);font-size:.95rem;letter-spacing:1px;color:var(--accent);opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:9000;backdrop-filter:blur(12px)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── FOOTER ── */
+  .footer{text-align:center;padding:16px;font-family:var(--font-mono);font-size:.65rem;color:var(--text-dim);letter-spacing:2px;border-top:1px solid var(--border)}
+
+  /* ── SCANLINES ── */
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,200,255,.012) 2px,rgba(0,200,255,.012) 4px)}
+  .corner-tl,.corner-br{position:fixed;width:60px;height:60px;pointer-events:none;z-index:9997;opacity:.4}
+  .corner-tl{top:0;left:0;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+  .corner-br{bottom:0;right:0;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-ring">
+    <img src="icons/lima-logo.png" alt="Lima Store" onerror="this.style.display='none'">
+  </div>
+  <div class="splash-title">Lima Store</div>
+  <div class="splash-sub">Automação Industrial</div>
+  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+  <div class="splash-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="install-banner">
+  <div class="banner-icon"><img src="icons/icon-192x192.png" alt="CSN"></div>
+  <div class="banner-text">
+    <strong>Instalar CSN Automação</strong>
+    <span>Adicionar à tela inicial como app</span>
+  </div>
+  <div class="banner-btns">
+    <button class="btn-install" onclick="installApp()">⬇ Instalar</button>
+    <button class="btn-dismiss" onclick="dismissBanner()">✕</button>
+  </div>
+</div>
+
+<div class="corner-tl"></div>
+<div class="corner-br"></div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <img src="icons/icon-192x192.png" alt="CSN" onerror="this.parentElement.textContent='⚙'">
+    </div>
+    <div class="topbar-info">
+      <div class="topbar-title">CSN Mineração</div>
+      <div class="topbar-sub">▸ Equipe de Automação</div>
+    </div>
+    <div class="topbar-date" id="live-date"></div>
+  </div>
+
+  <div class="content">
+
+    <!-- IDENTIFICAÇÃO -->
+    <div class="card">
+      <div class="card-header"><div class="icon">📋</div><h2>Identificação do Relatório</h2></div>
+      <div class="card-body">
+        <div class="row2">
+          <div><label>Empresa</label><input type="text" id="empresa" value="CSN Mineração" readonly style="opacity:.7"></div>
+          <div><label>Equipe</label><input type="text" id="equipe" value="Automação" readonly style="opacity:.7"></div>
+        </div>
+        <div class="row2">
+          <div><label>Data</label><input type="date" id="data-rel"></div>
+          <div><label>Responsável pelo Relatório</label><input type="text" id="responsavel" placeholder="Nome do responsável"></div>
+        </div>
+        <div><label>Tema do DDS (Diálogo Diário de Segurança)</label><input type="text" id="dds-tema" placeholder="Ex: Trabalho em altura, bloqueio e etiquetagem..."></div>
+      </div>
+    </div>
+
+    <!-- TIPO DE ATIVIDADE -->
+    <div class="card">
+      <div class="card-header"><div class="icon">🔧</div><h2>Tipo de Atividade</h2></div>
+      <div class="card-body">
+        <div>
+          <label>Classificação da Atividade</label>
+          <div class="pills">
+            <input type="radio" name="tipo" id="tipo-op" value="Em Oportunidade">
+            <label for="tipo-op" class="pill-label">Em Oportunidade</label>
+            <input type="radio" name="tipo" id="tipo-prev" value="Preventiva">
+            <label for="tipo-prev" class="pill-label">Preventiva</label>
+          </div>
+        </div>
+        <div id="processo-section" style="display:none">
+          <div class="divider"></div>
+          <label>Processo em Manutenção Preventiva</label>
+          <div class="process-grid">
+            <label class="process-item"><input type="checkbox" name="processo" value="Embarque de Minério"><span>⛏ Embarque de Minério</span></label>
+            <label class="process-item"><input type="checkbox" name="processo" value="Descarga de Minério"><span>🪨 Descarga de Minério</span></label>
+            <label class="process-item"><input type="checkbox" name="processo" value="Recarga de Carvão"><span>🔩 Recarga de Carvão</span></label>
+          </div>
+        </div>
+        <div><label>Equipamento</label><input type="text" id="equipamento" placeholder="Ex: CLP Siemens S7-1500, IHM, Inversor de Frequência..."></div>
+      </div>
+    </div>
+
+    <!-- ATIVIDADES -->
+    <div class="card">
+      <div class="card-header"><div class="icon">⚡</div><h2>Atividades Realizadas</h2></div>
+      <div class="card-body">
+        <div id="activities-container"></div>
+        <button class="btn-add" onclick="addActivity()"><span>＋</span> Adicionar Atividade</button>
+      </div>
+    </div>
+
+    <!-- COLABORADORES -->
+    <div class="card">
+      <div class="card-header"><div class="icon">👷</div><h2>Colaboradores Envolvidos</h2></div>
+      <div class="card-body">
+        <div class="collab-list" id="collab-list"></div>
+        <button class="btn-add" onclick="addCollab()"><span>＋</span> Adicionar Colaborador</button>
+      </div>
+    </div>
+
+    <!-- DESVIOS -->
+    <div class="card">
+      <div class="card-header"><div class="icon">⚠️</div><h2>Atividades Não Realizadas / Desvios</h2></div>
+      <div class="card-body">
+        <div class="list-rows" id="desvio-list"></div>
+        <button class="btn-add" onclick="addDesvio()"><span>＋</span> Adicionar Desvio</button>
+      </div>
+    </div>
+
+    <!-- PENDÊNCIAS -->
+    <div class="card">
+      <div class="card-header"><div class="icon">🔴</div><h2>Pendências Encontradas</h2></div>
+      <div class="card-body">
+        <div class="list-rows" id="pendencia-list"></div>
+        <button class="btn-add" onclick="addPendencia()"><span>＋</span> Adicionar Pendência</button>
+      </div>
+    </div>
+
+    <button class="btn-generate" onclick="generatePDF()">⬇ Gerar Relatório PDF</button>
+
+    <div class="footer">
+      CSN MINERAÇÃO · EQUIPE DE AUTOMAÇÃO · SISTEMA DE RELATÓRIOS v2.0<br>
+      Desenvolvido por Lima Store
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── PWA INSTALL ────────────────────────────────────────────────────
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show custom banner after 3s (after splash)
+  setTimeout(() => {
+    document.getElementById('install-banner').classList.add('show');
+  }, 3500);
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  toast('✔ App instalado com sucesso!', true);
+  deferredPrompt = null;
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') toast('✔ Instalando...', true);
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+function dismissBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+}
+
+// ── SERVICE WORKER ─────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('SW registered'))
+    .catch(e => console.log('SW error:', e));
+}
+
+// ── SPLASH ────────────────────────────────────────────────────────
+setTimeout(() => {
+  document.getElementById('splash').classList.add('fade');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    initDefaults();
+  }, 650);
+}, 2800);
+
+// ── DATE ──────────────────────────────────────────────────────────
+function updateDate() {
+  const now = new Date();
+  document.getElementById('live-date').innerHTML =
+    now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})
+    +'<br>'+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+updateDate(); setInterval(updateDate, 30000);
+document.getElementById('data-rel').value = new Date().toISOString().split('T')[0];
+
+// ── TIPO RADIO ────────────────────────────────────────────────────
+document.querySelectorAll('input[name="tipo"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('processo-section').style.display =
+      r.value === 'Preventiva' ? 'block' : 'none';
+  });
+});
+
+// ── DEFAULTS ──────────────────────────────────────────────────────
+function initDefaults() { addActivity(); addCollab(); addDesvio(); addPendencia(); }
+
+// ── ACTIVITIES ────────────────────────────────────────────────────
+let actCount = 0;
+function addActivity() {
+  actCount++;
+  const id = 'act-' + actCount;
+  const div = document.createElement('div');
+  div.className = 'activity-block'; div.id = id;
+  div.innerHTML = `
+    <span class="act-num">#${actCount}</span>
+    <div><label>Descrição da Atividade</label>
+      <textarea placeholder="Descreva detalhadamente a atividade realizada..."></textarea></div>
+    <div><label>Fotos da Atividade</label>
+      <div class="photo-zone" onclick="document.getElementById('file-${id}').click()">
+        <div class="icon-upload">📸</div><p>Toque para anexar fotos</p>
+        <input type="file" id="file-${id}" accept="image/*" multiple style="display:none"
+          onchange="handlePhotos(this,'prev-${id}')">
+      </div>
+      <div class="photo-previews" id="prev-${id}"></div></div>
+    ${actCount > 1 ? `<button class="btn-remove" onclick="document.getElementById('${id}').remove()">✕ Remover</button>` : ''}
+  `;
+  document.getElementById('activities-container').appendChild(div);
+}
+
+function handlePhotos(input, prevId) {
+  const container = document.getElementById(prevId);
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.className = 'photo-thumb'; img.src = e.target.result;
+      img.dataset.b64 = e.target.result;
+      container.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── COLLABORATORS ─────────────────────────────────────────────────
+let collabCount = 0;
+function addCollab() {
+  collabCount++;
+  const id = 'collab-' + collabCount;
+  const div = document.createElement('div');
+  div.className = 'collab-item'; div.id = id;
+  div.innerHTML = `<input type="text" placeholder="Nome do colaborador – Função">
+    ${collabCount > 1 ? `<button class="btn-icon" onclick="document.getElementById('${id}').remove()" title="Remover">✕</button>` : ''}`;
+  document.getElementById('collab-list').appendChild(div);
+}
+
+// ── DESVIOS ──────────────────────────────────────────────────────
+let desvioCount = 0;
+function addDesvio() {
+  desvioCount++;
+  const id = 'dev-' + desvioCount;
+  const div = document.createElement('div');
+  div.className = 'list-row'; div.id = id;
+  div.innerHTML = `<textarea placeholder="Descreva a atividade não realizada e o motivo do desvio..."></textarea>
+    ${desvioCount > 1 ? `<button class="btn-icon" onclick="document.getElementById('${id}').remove()" title="Remover">✕</button>` : ''}`;
+  document.getElementById('desvio-list').appendChild(div);
+}
+
+// ── PENDÊNCIAS ───────────────────────────────────────────────────
+let pendCount = 0;
+function addPendencia() {
+  pendCount++;
+  const id = 'pend-' + pendCount;
+  const div = document.createElement('div');
+  div.className = 'list-row'; div.id = id;
+  div.innerHTML = `<textarea placeholder="Descreva a pendência encontrada..."></textarea>
+    ${pendCount > 1 ? `<button class="btn-icon" onclick="document.getElementById('${id}').remove()" title="Remover">✕</button>` : ''}`;
+  document.getElementById('pendencia-list').appendChild(div);
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function toast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = ok ? 'var(--accent)' : 'var(--danger)';
+  t.style.color = ok ? 'var(--accent)' : 'var(--danger)';
+  t.style.background = ok ? 'rgba(0,200,255,.15)' : 'rgba(255,64,96,.15)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── PDF ──────────────────────────────────────────────────────────
+async function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const navy=[5,20,50],blue=[0,87,200],cyan=[0,180,230],white=[255,255,255],lgray=[230,240,252],dgray=[80,100,130];
+  const W=210,H=297,M=14;
+  let y=0;
+  const nl=(n=6)=>{y+=n;if(y>H-20){doc.addPage();y=20;}};
+  function drawRect(x,ry,w,h,col){doc.setFillColor(...col);doc.rect(x,ry,w,h,'F')}
+  function text(str,x,ry,sz,col,align='left',bold=false){
+    doc.setFontSize(sz);doc.setTextColor(...col);
+    doc.setFont('helvetica',bold?'bold':'normal');
+    doc.text(str,x,ry,{align});
+  }
+  function sectionHeader(title,icon){
+    if(y>H-40){doc.addPage();y=20;}
+    drawRect(M,y,W-2*M,9,[8,30,70]);
+    doc.setDrawColor(...cyan);doc.setLineWidth(.4);
+    doc.rect(M,y,W-2*M,9,'S');
+    text(icon+' '+title.toUpperCase(),M+4,y+6.2,10,cyan,'left',true);
+    y+=12;
+  }
+  function field(label,val){
+    if(!val||!val.trim())return;
+    if(y>H-20){doc.addPage();y=20;}
+    text(label.toUpperCase()+':',M,y,7.5,dgray,'left',true);y+=5;
+    doc.splitTextToSize(val,W-2*M).forEach(ln=>{
+      if(y>H-16){doc.addPage();y=20;}
+      text(ln,M,y,9,navy);y+=5;
+    });y+=2;
+  }
+
+  // Header
+  drawRect(0,0,W,46,navy);
+  drawRect(0,44,W,2,cyan);
+  doc.setFontSize(20);doc.setTextColor(...white);doc.setFont('helvetica','bold');
+  doc.text('RELATÓRIO DE ATIVIDADES',W/2,18,{align:'center'});
+  doc.setFontSize(11);doc.setTextColor(...cyan);
+  doc.text('EQUIPE DE AUTOMAÇÃO · CSN MINERAÇÃO',W/2,27,{align:'center'});
+  const dataVal=document.getElementById('data-rel').value;
+  const dataFmt=dataVal?dataVal.split('-').reverse().join('/'):'—';
+  drawRect(W-62,8,50,14,[0,55,140]);
+  doc.setFontSize(7);doc.setTextColor(...cyan);doc.setFont('helvetica','bold');
+  doc.text('DATA',W-37,14,{align:'center'});
+  doc.setFontSize(11);doc.setTextColor(...white);
+  doc.text(dataFmt,W-37,20,{align:'center'});
+  y=54;
+
+  // Identificação
+  sectionHeader('Identificação','▸');
+  const empresa=document.getElementById('empresa').value;
+  const equipe=document.getElementById('equipe').value;
+  const resp=document.getElementById('responsavel').value;
+  const dds=document.getElementById('dds-tema').value;
+  [[`Empresa`,empresa],[`Equipe`,equipe],[`Responsável`,resp],[`Data`,dataFmt]].forEach(([l,v],i)=>{
+    const col=i%2===0?M:W/2+2;
+    if(i%2===0&&i>0)y+=18;
+    drawRect(col,y,W/2-M-4,14,lgray);
+    doc.setFontSize(6.5);doc.setTextColor(...dgray);doc.setFont('helvetica','bold');
+    doc.text(l.toUpperCase(),col+3,y+5);
+    doc.setFontSize(10);doc.setTextColor(...navy);doc.setFont('helvetica','normal');
+    doc.text(v||'—',col+3,y+11);
+  });
+  y+=20;
+  if(dds)field('Tema do DDS',dds);
+
+  // Tipo
+  sectionHeader('Tipo de Atividade','▸');
+  const tipoEl=document.querySelector('input[name="tipo"]:checked');
+  const tipo=tipoEl?tipoEl.value:'—';
+  field('Classificação',tipo);
+  if(tipo==='Preventiva'){
+    const procs=Array.from(document.querySelectorAll('input[name="processo"]:checked')).map(c=>c.value).join(' | ');
+    if(procs)field('Processos',procs);
+  }
+  const equip=document.getElementById('equipamento').value;
+  if(equip)field('Equipamento',equip);
+
+  // Atividades
+  const actBlocks=document.querySelectorAll('.activity-block');
+  if(actBlocks.length){
+    sectionHeader('Atividades Realizadas','▸');
+    for(let i=0;i<actBlocks.length;i++){
+      const blk=actBlocks[i];
+      const desc=blk.querySelector('textarea')?.value;
+      const imgs=blk.querySelectorAll('.photo-thumb');
+      if(y>H-30){doc.addPage();y=20;}
+      drawRect(M,y,W-2*M,7,[0,55,140]);
+      text('ATIVIDADE '+(i+1),M+3,y+5,8.5,white,'left',true);y+=9;
+      if(desc&&desc.trim()){
+        doc.splitTextToSize(desc,W-2*M).forEach(ln=>{
+          if(y>H-16){doc.addPage();y=20;}
+          text(ln,M,y,9,navy);y+=5;
+        });
+      }
+      y+=2;
+      if(imgs.length){
+        text('Registro Fotográfico:',M,y,7.5,dgray,'left',true);y+=5;
+        let px=M;const thumbW=42,thumbH=32,gap=4;
+        for(let j=0;j<imgs.length;j++){
+          if(px+thumbW>W-M){px=M;y+=thumbH+gap;}
+          if(y+thumbH>H-16){doc.addPage();y=20;px=M;}
+          try{doc.addImage(imgs[j].dataset.b64,'JPEG',px,y,thumbW,thumbH);
+            doc.setDrawColor(...cyan);doc.setLineWidth(.3);doc.rect(px,y,thumbW,thumbH,'S');
+          }catch(e){}
+          px+=thumbW+gap;
+        }
+        y+=thumbH+6;
+      }
+      nl(4);
+    }
+  }
+
+  // Colaboradores
+  const collabInputs=Array.from(document.querySelectorAll('#collab-list input[type=text]')).map(i=>i.value).filter(v=>v.trim());
+  if(collabInputs.length){
+    sectionHeader('Colaboradores Envolvidos','▸');
+    collabInputs.forEach((c,i)=>{
+      if(y>H-16){doc.addPage();y=20;}
+      drawRect(M,y,4,6,cyan);
+      text((i+1)+'.  '+c,M+8,y+5,9.5,navy);y+=8;
+    });nl(2);
+  }
+
+  // Desvios
+  const desvios=Array.from(document.querySelectorAll('#desvio-list textarea')).map(t=>t.value).filter(v=>v.trim());
+  if(desvios.length){
+    sectionHeader('Atividades Não Realizadas / Desvios','▸');
+    desvios.forEach((d,i)=>{
+      if(y>H-20){doc.addPage();y=20;}
+      text('⚠ '+(i+1)+'.',M,y,9,[200,60,0],'left',true);y+=5;
+      doc.splitTextToSize(d,W-2*M).forEach(ln=>{if(y>H-16){doc.addPage();y=20;}text(ln,M+4,y,9,navy);y+=5;});y+=2;
+    });nl(2);
+  }
+
+  // Pendências
+  const pends=Array.from(document.querySelectorAll('#pendencia-list textarea')).map(t=>t.value).filter(v=>v.trim());
+  if(pends.length){
+    sectionHeader('Pendências Encontradas','▸');
+    pends.forEach((p,i)=>{
+      if(y>H-20){doc.addPage();y=20;}
+      text('🔴 '+(i+1)+'.',M,y,9,[180,0,0],'left',true);y+=5;
+      doc.splitTextToSize(p,W-2*M).forEach(ln=>{if(y>H-16){doc.addPage();y=20;}text(ln,M+4,y,9,navy);y+=5;});y+=2;
+    });nl(2);
+  }
+
+  // Footer
+  const pageCount=doc.getNumberOfPages();
+  for(let p=1;p<=pageCount;p++){
+    doc.setPage(p);
+    drawRect(0,H-12,W,12,navy);
+    doc.setFontSize(6.5);doc.setTextColor(...cyan);doc.setFont('helvetica','normal');
+    doc.text('CSN MINERAÇÃO · EQUIPE DE AUTOMAÇÃO',M,H-5);
+    doc.text('Página '+p+'/'+pageCount,W-M,H-5,{align:'right'});
+    doc.setTextColor(...dgray);
+    doc.text(new Date().toLocaleString('pt-BR'),W/2,H-5,{align:'center'});
+  }
+
+  const filename='Relatorio_Automacao_'+dataFmt.replace(/\//g,'-')+'.pdf';
+  const pdfBlob=doc.output('blob');
+  if(navigator.share){
+    const file=new File([pdfBlob],filename,{type:'application/pdf'});
+    try{await navigator.share({title:'Relatório CSN Automação',files:[file]});toast('✔ PDF compartilhado!',true);}
+    catch(e){if(e.name!=='AbortError')doc.save(filename);toast('✔ Relatório gerado!',true);}
+  } else {
+    doc.save(filename);toast('✔ PDF salvo!',true);
+  }
+}
+</script>
+</body>
+</html>
