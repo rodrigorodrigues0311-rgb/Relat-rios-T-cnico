@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v1778293263 -->
+<!-- v1778295141 -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -10,10 +10,11 @@
 <meta name="apple-mobile-web-app-title" content="Relatório Automação">
 <meta name="application-name" content="Relatório Automação">
 <meta name="theme-color" content="#00c8ff">
-<link rel="manifest" href="./manifest.json?v=1778293263">
-<link rel="apple-touch-icon" href="icons/icon-192x192.png">
-<link rel="icon" type="image/png" href="icons/icon-192x192.png">
-<title>Relatório Automação – CSN v1778293263</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>Relatório Automação – CSN</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -203,63 +204,41 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
       <div class="card-bd"><div class="list-rows" id="pends"></div><button class="btn-add" onclick="addPend()">＋ Adicionar Pendência</button></div>
     </div>
     <button class="btn-gen" onclick="makePDF()">⬇ Gerar Relatório PDF</button>
-    <div class="footer">CSN MINERAÇÃO · EQUIPE DE AUTOMAÇÃO · v1778293263<br>Desenvolvido por Lima Store</div>
+    <div class="footer">CSN MINERAÇÃO · EQUIPE DE AUTOMAÇÃO · v1778295141<br>Desenvolvido por Lima Store</div>
   </div>
 </div>
 <div id="toast"></div>
 <script>
-const APP_VER = '1778293263';
-
-// ── LIMPA CACHES ANTIGOS ─────────────────────────────────────────
-(async function clearOld() {
-  try {
-    const keys = await caches.keys();
-    for (const k of keys) {
-      if (!k.includes(APP_VER)) {
-        await caches.delete(k);
-        console.log('[CACHE] removido:', k);
-      }
-    }
-  } catch(e) {}
-})();
-
-// ── SERVICE WORKER ───────────────────────────────────────────────
+// SW
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js?v=' + APP_VER)
-    .then(reg => {
-      reg.update();
-      console.log('[SW] ok:', reg.scope);
-    })
+  navigator.serviceWorker.register('./sw.js')
+    .then(r => { r.update(); console.log('[SW]', r.scope); })
     .catch(e => console.warn('[SW]', e));
 }
 
-// ── PWA INSTALL ──────────────────────────────────────────────────
+// PWA
 let pwaEvt = null;
 let splashOk = false;
 
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   pwaEvt = e;
-  console.log('[PWA] prompt capturado ✓');
+  console.log('[PWA] capturado');
   if (splashOk) showCard();
 });
 
 window.addEventListener('appinstalled', () => {
-  hideCard();
-  pwaEvt = null;
-  toast('✔ App instalado!');
+  hideCard(); pwaEvt = null;
+  toast('✔ App instalado com sucesso!');
 });
 
 function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches
-    || navigator.standalone === true;
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
 function showCard() {
   if (isStandalone()) return;
   if (!pwaEvt) return;
-  const skip = localStorage.getItem('skip-' + APP_VER);
-  if (skip && Date.now() - +skip < 86400000) return;
   document.getElementById('install-card').classList.add('show');
 }
 
@@ -269,44 +248,40 @@ function hideCard() {
 
 function skipInstall() {
   hideCard();
-  localStorage.setItem('skip-' + APP_VER, Date.now());
+  localStorage.setItem('pwa-skip', Date.now());
 }
 
 document.getElementById('btn-instalar').addEventListener('click', async () => {
-  if (!pwaEvt) {
-    toast('⚠ Use o Chrome → menu ⋮ → Instalar app', false);
-    return;
-  }
+  if (!pwaEvt) { toast('⚠ Use Chrome → menu ⋮ → Instalar app', false); return; }
   pwaEvt.prompt();
-  const res = await pwaEvt.userChoice;
-  pwaEvt = null;
-  hideCard();
-  if (res.outcome === 'accepted') toast('✔ Instalando...');
+  const r = await pwaEvt.userChoice;
+  pwaEvt = null; hideCard();
+  if (r.outcome === 'accepted') toast('✔ Instalando...');
 });
 
-// ── SPLASH ───────────────────────────────────────────────────────
+// Splash
 setTimeout(() => {
   document.getElementById('splash').classList.add('fade');
   setTimeout(() => {
     document.getElementById('splash').style.display = 'none';
     document.getElementById('app').classList.add('visible');
     splashOk = true;
-    showCard();
+    const skip = localStorage.getItem('pwa-skip');
+    if (!skip || Date.now() - +skip > 86400000) showCard();
     init();
   }, 700);
 }, 3000);
 
-// ── DATE ─────────────────────────────────────────────────────────
+// Date
 function tick() {
   const d = new Date();
   document.getElementById('live-date').innerHTML =
-    d.toLocaleDateString('pt-BR', {weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}) +
-    '<br>' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}) +
+    '<br>' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 tick(); setInterval(tick, 30000);
 document.getElementById('data-rel').value = new Date().toISOString().split('T')[0];
 
-// ── TIPO ─────────────────────────────────────────────────────────
 document.querySelectorAll('input[name="tipo"]').forEach(r =>
   r.addEventListener('change', () =>
     document.getElementById('proc-sec').style.display = r.value === 'Preventiva' ? 'block' : 'none'
@@ -315,13 +290,11 @@ document.querySelectorAll('input[name="tipo"]').forEach(r =>
 
 function init() { addAct(); addCollab(); addDev(); addPend(); }
 
-// ── ACTIVITIES ───────────────────────────────────────────────────
-let ac = 0;
+let ac=0;
 function addAct() {
-  ac++;
-  const id = 'a' + ac, d = document.createElement('div');
-  d.className = 'act-blk'; d.id = id;
-  d.innerHTML = `<span class="act-num">#${ac}</span>
+  ac++; const id='a'+ac, d=document.createElement('div');
+  d.className='act-blk'; d.id=id;
+  d.innerHTML=`<span class="act-num">#${ac}</span>
     <div><label>Descrição da Atividade</label>
       <textarea placeholder="Descreva detalhadamente a atividade realizada..."></textarea></div>
     <div><label>Fotos da Atividade</label>
@@ -331,67 +304,29 @@ function addAct() {
           onchange="addPhotos(this,'p${id}')">
       </div>
       <div class="photos" id="p${id}"></div></div>
-    ${ac > 1 ? `<button class="btn-rm" onclick="document.getElementById('${id}').remove()">✕ Remover</button>` : ''}`;
+    ${ac>1?`<button class="btn-rm" onclick="document.getElementById('${id}').remove()">✕ Remover</button>`:''}`;
   document.getElementById('acts').appendChild(d);
 }
-function addPhotos(inp, pid) {
-  Array.from(inp.files).forEach(f => {
-    const r = new FileReader();
-    r.onload = e => {
-      const img = document.createElement('img');
-      img.className = 'thumb';
-      img.src = img.dataset.b64 = e.target.result;
-      document.getElementById(pid).appendChild(img);
-    };
+function addPhotos(inp,pid){
+  Array.from(inp.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{const img=document.createElement('img');img.className='thumb';img.src=img.dataset.b64=e.target.result;document.getElementById(pid).appendChild(img);};
     r.readAsDataURL(f);
   });
 }
+let cc=0;
+function addCollab(){cc++;const id='c'+cc,d=document.createElement('div');d.className='collab-item';d.id=id;d.innerHTML=`<input type="text" placeholder="Nome completo – Função / Cargo">${cc>1?`<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>`:''}`;document.getElementById('collabs').appendChild(d);}
+let dc=0;
+function addDev(){dc++;const id='d'+dc,d=document.createElement('div');d.className='list-row';d.id=id;d.innerHTML=`<textarea placeholder="Atividade não realizada e motivo do desvio..."></textarea>${dc>1?`<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>`:''}`;document.getElementById('devs').appendChild(d);}
+let pc=0;
+function addPend(){pc++;const id='p'+pc,d=document.createElement('div');d.className='list-row';d.id=id;d.innerHTML=`<textarea placeholder="Descreva a pendência encontrada..."></textarea>${pc>1?`<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>`:''}`;document.getElementById('pends').appendChild(d);}
 
-let cc = 0;
-function addCollab() {
-  cc++;
-  const id = 'c' + cc, d = document.createElement('div');
-  d.className = 'collab-item'; d.id = id;
-  d.innerHTML = `<input type="text" placeholder="Nome completo – Função / Cargo">
-    ${cc > 1 ? `<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>` : ''}`;
-  document.getElementById('collabs').appendChild(d);
-}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.cssText+=ok?';border-color:var(--ac);color:var(--ac);background:rgba(0,200,255,.15)':';border-color:var(--red);color:var(--red);background:rgba(255,64,96,.15)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
-let dc = 0;
-function addDev() {
-  dc++;
-  const id = 'd' + dc, d = document.createElement('div');
-  d.className = 'list-row'; d.id = id;
-  d.innerHTML = `<textarea placeholder="Atividade não realizada e motivo do desvio..."></textarea>
-    ${dc > 1 ? `<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>` : ''}`;
-  document.getElementById('devs').appendChild(d);
-}
-
-let pc = 0;
-function addPend() {
-  pc++;
-  const id = 'p' + pc, d = document.createElement('div');
-  d.className = 'list-row'; d.id = id;
-  d.innerHTML = `<textarea placeholder="Descreva a pendência encontrada..."></textarea>
-    ${pc > 1 ? `<button class="bi" onclick="document.getElementById('${id}').remove()">✕</button>` : ''}`;
-  document.getElementById('pends').appendChild(d);
-}
-
-function toast(msg, ok = true) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.cssText += ok
-    ? ';border-color:var(--ac);color:var(--ac);background:rgba(0,200,255,.15)'
-    : ';border-color:var(--red);color:var(--red);background:rgba(255,64,96,.15)';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-// ── PDF ──────────────────────────────────────────────────────────
-async function makePDF() {
-  const {jsPDF} = window.jspdf;
-  const doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-  const W=210,H=297,M=14; let y=0;
+async function makePDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const W=210,H=297,M=14;let y=0;
   const C={navy:[4,18,48],blue:[0,55,155],cyan:[0,165,215],white:[255,255,255],lgray:[232,242,252],mgray:[175,198,220],dgray:[65,88,118],text:[18,32,62],accent:[0,135,195]};
   function chk(n){if(y+n>H-16){doc.addPage();y=20;}}
   function fill(x,ry,w,h,c){doc.setFillColor(...c);doc.rect(x,ry,w,h,'F');}
@@ -443,10 +378,7 @@ async function makePDF() {
   for(let p=1;p<=tot;p++){doc.setPage(p);fill(0,H-12,W,12,C.navy);fill(0,H-12,W,.8,C.cyan);ft(7.5,C.cyan);tx('CSN MINERAÇÃO · EQUIPE DE AUTOMAÇÃO',M,H-5.5);tx('Pág '+p+'/'+tot,W-M,H-5.5,{align:'right'});ft(7,C.mgray);tx(new Date().toLocaleString('pt-BR'),W/2,H-5.5,{align:'center'});}
   const fn='Relatorio_Automacao_'+df.replace(/[/]/g,'-')+'.pdf';
   const bl=doc.output('blob');
-  if(navigator.share){
-    try{await navigator.share({title:'Relatório CSN',files:[new File([bl],fn,{type:'application/pdf'})]});toast('✔ PDF compartilhado!');}
-    catch(e){if(e.name!=='AbortError'){doc.save(fn);toast('✔ PDF salvo!');}}
-  }else{doc.save(fn);toast('✔ PDF salvo!');}
+  if(navigator.share){try{await navigator.share({title:'Relatório CSN',files:[new File([bl],fn,{type:'application/pdf'})]});toast('✔ PDF compartilhado!');}catch(e){if(e.name!=='AbortError'){doc.save(fn);toast('✔ PDF salvo!');}}}else{doc.save(fn);toast('✔ PDF salvo!');}
 }
 </script>
 </body>
