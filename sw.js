@@ -1,28 +1,20 @@
-const CACHE = 'csn-rel-v3';
-const FILES = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icons/icon-72x72.png',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png'
-];
+const CACHE = 'csn-v4';
+const ASSETS = ['./', './index.html', './manifest.json',
+  './icons/icon-192x192.png', './icons/icon-512x512.png'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES).catch(()=>{})));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})));
 });
-
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(ks => Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
-
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./index.html')))
+    caches.match(e.request).then(r => r || fetch(e.request))
   );
 });
