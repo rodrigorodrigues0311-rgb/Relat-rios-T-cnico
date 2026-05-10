@@ -127,7 +127,7 @@ html,body{height:100%;background:#0D2B6B;font-family:var(--font);font-size:15px;
   pointer-events:none;
 }
 .dash-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;position:relative;z-index:1}
-.dash-logo-img{width:44px;height:44px;border-radius:11px;overflow:hidden;border:2px solid rgba(255,255,255,.3);flex-shrink:0}
+.dash-logo-img{width:38px;height:38px;border-radius:9px;overflow:hidden;border:2px solid rgba(255,255,255,.3);flex-shrink:0}
 .dash-logo-img img{width:100%;height:100%;object-fit:cover}
 .dash-logo-txt .t1{font-size:.95rem;font-weight:800;color:#fff;line-height:1.15}
 .dash-logo-txt .t2{font-size:.72rem;color:rgba(255,255,255,.65)}
@@ -378,14 +378,31 @@ select.fi option{background:#fff}
   <!-- ===== DASHBOARD ===== -->
   <div class="screen active" id="scr-dash">
     <div class="dash-head">
-      <div class="dash-logo-row">
-        <div class="dash-logo-img"><img src="icon-192.png" alt="CSN"></div>
-        <div class="dash-logo-txt">
-          <div class="t1">RELATORIOS DE AUTOMACAO</div>
-          <div class="t2">CSN Mineracao</div>
+      <!-- Linha superior: logo + data -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="dash-logo-img"><img src="icon-192.png" alt="CSN"></div>
+          <div class="dash-logo-txt">
+            <div class="t1">RELATORIOS DE AUTOMACAO</div>
+            <div class="t2">CSN Mineracao</div>
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:rgba(255,255,255,.65);text-align:right;line-height:1.5">
+          <span id="dash-dt"></span>
         </div>
       </div>
-      <div class="dash-date"><span>&#128197;</span><span id="dash-dt"></span></div>
+      <!-- Perfil do usuario -->
+      <div style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.12);border-radius:16px;padding:13px 16px;cursor:pointer" onclick="navTo('scr-profile')">
+        <div style="width:54px;height:54px;border-radius:50%;border:2.5px solid rgba(255,255,255,.5);overflow:hidden;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">
+          <span id="dash-prof-ico" style="font-size:1.8rem;color:rgba(255,255,255,.8)">&#128100;</span>
+          <img id="dash-prof-img" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div id="dash-prof-name" style="font-size:1.05rem;font-weight:800;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bem-vindo!</div>
+          <div id="dash-prof-role" style="font-size:.75rem;color:rgba(255,255,255,.7);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">CSN Mineracao - Automacao</div>
+        </div>
+        <div style="color:rgba(255,255,255,.5);font-size:1rem">&#8250;</div>
+      </div>
     </div>
     <div class="scroll">
       <div class="dash-grid">
@@ -867,6 +884,7 @@ function init(){
   loadHistoryFromStorage();
   loadDraft();
   updateDashDate();
+  updateDashHeader();
   document.getElementById('f-data').value=new Date().toISOString().split('T')[0];
   buildAbsCollab();
   document.getElementById('ph-inp').addEventListener('change',function(){
@@ -891,6 +909,22 @@ function updateDashDate(){
   var ms=['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   var el=document.getElementById('dash-dt');
   if(el)el.textContent=d.getDate()+' de '+ms[d.getMonth()]+' de '+d.getFullYear()+' - '+wd[d.getDay()];
+}
+
+function updateDashHeader(){
+  try{
+    var n=localStorage.getItem(SK.prof.nome)||localStorage.getItem(SK.rname)||'';
+    var c=localStorage.getItem(SK.prof.func)||localStorage.getItem(SK.rcargo)||'';
+    var p=localStorage.getItem(SK.prof.photo)||localStorage.getItem(SK.rphoto)||'';
+    var nameEl=document.getElementById('dash-prof-name');
+    var roleEl=document.getElementById('dash-prof-role');
+    var imgEl=document.getElementById('dash-prof-img');
+    var icoEl=document.getElementById('dash-prof-ico');
+    if(nameEl)nameEl.textContent=n||'Bem-vindo!';
+    if(roleEl)roleEl.textContent=c?c+' - CSN Mineracao':'CSN Mineracao - Automacao';
+    if(p&&imgEl){imgEl.src=p;imgEl.style.display='block';if(icoEl)icoEl.style.display='none';}
+    else if(imgEl){imgEl.style.display='none';if(icoEl)icoEl.style.display='';}
+  }catch(e){}
 }
 
 // NAV
@@ -1019,9 +1053,11 @@ function selType(val,key,col){
 
 // PROFILE PHOTO
 function applyRP(u){
-  ['rpimg','prof-img'].forEach(function(id){var i=document.getElementById(id);if(i){i.src=u;i.style.display='block';}});
+  // Aplica em todos os elementos de foto de perfil
+  ['rpimg','prof-img','dash-prof-img'].forEach(function(id){var i=document.getElementById(id);if(i){i.src=u;i.style.display='block';}});
   var ico=document.getElementById('rpico');if(ico)ico.style.display='none';
   var paico=document.getElementById('prof-av-ico');if(paico)paico.style.display='none';
+  var dico=document.getElementById('dash-prof-ico');if(dico)dico.style.display='none';
 }
 
 function loadProfile(){
@@ -1033,6 +1069,8 @@ function loadProfile(){
     var c=localStorage.getItem(SK.prof.func)||localStorage.getItem(SK.rcargo);
     if(c){var fc=document.getElementById('f-cargo');if(fc)fc.value=c;}
   }catch(e){}
+  // Atualiza header do dashboard
+  setTimeout(updateDashHeader,50);
 }
 
 function refreshProfile(){
@@ -1083,10 +1121,40 @@ function saveProfEdit(){
   }catch(e){}
   closeProfEdit();
   refreshProfile();
+  updateDashHeader();
   toast('Perfil salvo!');
 }
 
 function closeProfEdit(){document.getElementById('prof-edit-ov').classList.remove('show');}
+
+function compressAndSavePhoto(dataUrl,onDone){
+  // Comprime para max 200x200 JPEG qualidade 0.7 para caber no localStorage
+  var img=new Image();
+  img.onload=function(){
+    var canvas=document.createElement('canvas');
+    var maxSz=200;
+    var w=img.width,h=img.height;
+    if(w>h){if(w>maxSz){h=Math.round(h*maxSz/w);w=maxSz;}}
+    else{if(h>maxSz){w=Math.round(w*maxSz/h);h=maxSz;}}
+    canvas.width=w;canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    var compressed=canvas.toDataURL('image/jpeg',0.75);
+    try{
+      localStorage.setItem(SK.prof.photo,compressed);
+      localStorage.setItem(SK.rphoto,compressed);
+    }catch(x){
+      // Se ainda falhar, tenta qualidade menor
+      try{
+        var tiny=canvas.toDataURL('image/jpeg',0.4);
+        localStorage.setItem(SK.prof.photo,tiny);
+        localStorage.setItem(SK.rphoto,tiny);
+        compressed=tiny;
+      }catch(x2){}
+    }
+    if(onDone)onDone(compressed);
+  };
+  img.src=dataUrl;
+}
 
 function setupPhotoInputs(){
   ['rpinp','rpinp2'].forEach(function(id){
@@ -1096,8 +1164,10 @@ function setupPhotoInputs(){
       var f=this.files[0];if(!f)return;
       var r=new FileReader();
       r.onload=function(e){
-        try{localStorage.setItem(SK.prof.photo,e.target.result);localStorage.setItem(SK.rphoto,e.target.result);}catch(x){}
-        applyRP(e.target.result);toast('Foto salva!');
+        compressAndSavePhoto(e.target.result,function(compressed){
+          applyRP(compressed);toast('Foto salva!');
+          refreshProfile();updateDashHeader();
+        });
       };
       r.readAsDataURL(f);
     });
@@ -1127,6 +1197,7 @@ function showPM(){
     ['rpimg','prof-img'].forEach(function(id){var i=document.getElementById(id);if(i){i.src='';i.style.display='none';}});
     var ico=document.getElementById('rpico');if(ico)ico.style.display='';
     var paico=document.getElementById('prof-av-ico');if(paico)paico.style.display='';
+    updateDashHeader();
     toast('Foto removida');
   };
   document.getElementById('pmc').onclick=function(){m.remove();};
