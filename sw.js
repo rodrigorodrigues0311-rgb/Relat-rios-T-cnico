@@ -1,5 +1,5 @@
-// v1778375211
-const CACHE='csn-1778375211';
+// v1778376963
+const CACHE='csn-1778376963';
 const ASSETS=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png','./lima-logo.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});

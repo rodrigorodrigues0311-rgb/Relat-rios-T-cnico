@@ -144,7 +144,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
     <div class="wh"><span>Exportar WhatsApp</span></div>
     <div class="wd">
       <textarea id="wt" readonly></textarea>
-      <p style="font-family:var(--fm);font-size:.67rem;color:var(--dim)">Fotos enviar separadamente.</p>
+      <p style="font-family:var(--fm);font-size:.67rem;color:var(--dim)">Fotos enviar separadamente apos colar o texto.</p>
       <div class="wbb">
         <button class="wcp" id="wcp">Copiar Texto</button>
         <button class="wcl" id="wcl">Fechar</button>
@@ -269,8 +269,35 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
   </div>
 </div>
 <div id="toast"></div>
+
 <script>
+// -- ACCENT REMOVAL FOR PDF --
+function sa(t){
+  if(!t)return '';
+  var m={'a':['a','A','a','A','a','a','A','A'],'e':['e','E','e','E','e','E'],'i':['i','I','i','I'],'o':['o','O','o','O','o','o','O','O'],'u':['u','U','u','U'],'c':['c','C'],'n':['n','N']};
+  var r={'a':/[\u00e0\u00e1\u00e2\u00e3\u00e4\u00c0\u00c1\u00c2\u00c3\u00c4]/g,
+         'e':/[\u00e8\u00e9\u00ea\u00eb\u00c8\u00c9\u00ca\u00cb]/g,
+         'i':/[\u00ec\u00ed\u00ee\u00ef\u00cc\u00cd\u00ce\u00cf]/g,
+         'o':/[\u00f2\u00f3\u00f4\u00f5\u00f6\u00d2\u00d3\u00d4\u00d5\u00d6]/g,
+         'u':/[\u00f9\u00fa\u00fb\u00fc\u00d9\u00da\u00db\u00dc]/g,
+         'c':/[\u00e7\u00c7]/g,'n':/[\u00f1\u00d1]/g};
+  var s=String(t);
+  s=s.replace(r.a,function(c){return /[A-Z]/.test(c)?'A':'a';});
+  s=s.replace(r.e,function(c){return /[A-Z]/.test(c)?'E':'e';});
+  s=s.replace(r.i,function(c){return /[A-Z]/.test(c)?'I':'i';});
+  s=s.replace(r.o,function(c){return /[A-Z]/.test(c)?'O':'o';});
+  s=s.replace(r.u,function(c){return /[A-Z]/.test(c)?'U':'u';});
+  s=s.replace(r.c,function(c){return c==='\u00c7'?'C':'c';});
+  s=s.replace(r.n,function(c){return c==='\u00d1'?'N':'n';});
+  // remove remaining non-latin
+  s=s.replace(/[^\x00-\x7F]/g,'');
+  return s;
+}
+
+// -- SERVICE WORKER --
 if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js').then(function(r){r.update();}).catch(function(){});}
+
+// -- PWA INSTALL --
 var PE=null,SOK=false;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();PE=e;if(SOK)showIC();});
 window.addEventListener('appinstalled',function(){hideIC();PE=null;toast('App instalado!');});
@@ -278,12 +305,18 @@ function isStd(){return window.matchMedia('(display-mode: standalone)').matches|
 function showIC(){if(isStd()||!PE)return;document.getElementById('ic').classList.add('show');}
 function hideIC(){document.getElementById('ic').classList.remove('show');}
 document.getElementById('bskip').addEventListener('click',function(){hideIC();try{localStorage.setItem('ps',Date.now());}catch(e){}});
-document.getElementById('binst').addEventListener('click',function(){if(!PE){toast('Chrome, menu, Instalar app',false);return;}PE.prompt();PE.userChoice.then(function(r){PE=null;hideIC();if(r.outcome==='accepted')toast('Instalando...');});});
+document.getElementById('binst').addEventListener('click',function(){
+  if(!PE){toast('Chrome, menu, Instalar app',false);return;}
+  PE.prompt();PE.userChoice.then(function(r){PE=null;hideIC();if(r.outcome==='accepted')toast('Instalando...');});
+});
+
+// -- SPLASH (usa window.onload para garantir que imagens carregaram) --
 window.addEventListener('load',function(){
   setTimeout(function(){
-    document.getElementById('splash').classList.add('hide');
+    var s=document.getElementById('splash');
+    s.classList.add('hide');
     setTimeout(function(){
-      document.getElementById('splash').style.display='none';
+      s.style.display='none';
       document.getElementById('app').classList.add('visible');
       SOK=true;
       var sk=null;try{sk=localStorage.getItem('ps');}catch(e){}
@@ -292,11 +325,17 @@ window.addEventListener('load',function(){
     },700);
   },2800);
 });
+
+// -- DATE --
 function tick(){var d=new Date();document.getElementById('ldt').innerHTML=d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'})+'<br>'+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
 tick();setInterval(tick,30000);
 document.getElementById('drel').value=new Date().toISOString().split('T')[0];
+
+// -- RADIOS --
 document.querySelectorAll('input[name="tipo"]').forEach(function(r){r.addEventListener('change',function(){document.getElementById('psec').style.display=r.value==='Preventiva'?'block':'none';});});
 document.querySelectorAll('input[name="aus"]').forEach(function(r){r.addEventListener('change',function(){document.getElementById('ausc').style.display=r.value==='sim'?'block':'none';});});
+
+// -- FOTO RESPONSAVEL --
 var RPK='rp1',RNK='rn1',RCK='rc1';
 function applyRP(u){var i=document.getElementById('rpimg'),c=document.getElementById('rpico');i.src=u;i.style.display='block';c.style.display='none';}
 function loadRP(){try{var s=localStorage.getItem(RPK);if(s)applyRP(s);var n=localStorage.getItem(RNK);if(n)document.getElementById('resp').value=n;var c=localStorage.getItem(RCK);if(c)document.getElementById('rcargo').value=c;}catch(e){}}
@@ -305,25 +344,341 @@ document.getElementById('rpc').addEventListener('click',function(){var s=null;tr
 function showPM(){var o=document.getElementById('pmenu');if(o)o.remove();var m=document.createElement('div');m.id='pmenu';m.style.cssText='position:fixed;inset:0;z-index:9995;background:rgba(2,9,20,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;backdrop-filter:blur(8px)';m.innerHTML='<div style="font-family:var(--fh);font-size:1.2rem;color:#fff">FOTO DO RESPONSAVEL</div><button id="pma" style="width:210px;padding:13px;border-radius:10px;background:linear-gradient(135deg,#0057ff,#00c8ff);border:none;font-family:var(--fh);font-size:1.05rem;font-weight:700;color:#fff;cursor:pointer">Alterar Foto</button><button id="pmd" style="width:210px;padding:13px;border-radius:10px;background:rgba(255,64,96,.15);border:1px solid rgba(255,64,96,.4);font-family:var(--fh);font-size:1.05rem;font-weight:700;color:#ff4060;cursor:pointer">Excluir Foto</button><button id="pmc" style="width:210px;padding:13px;border-radius:10px;background:transparent;border:1px solid rgba(0,200,255,.3);font-family:var(--fh);font-size:.95rem;color:var(--dim);cursor:pointer">Cancelar</button>';document.body.appendChild(m);document.getElementById('pma').onclick=function(){m.remove();document.getElementById('rpinp').click();};document.getElementById('pmd').onclick=function(){m.remove();try{localStorage.removeItem(RPK);}catch(e){}document.getElementById('rpimg').style.display='none';document.getElementById('rpico').style.display='block';toast('Foto removida');};document.getElementById('pmc').onclick=function(){m.remove();};}
 document.getElementById('resp').addEventListener('input',function(){try{localStorage.setItem(RNK,this.value);}catch(e){}});
 document.getElementById('rcargo').addEventListener('input',function(){try{localStorage.setItem(RCK,this.value);}catch(e){}});
+
+// -- INIT --
 function init(){loadRP();addAct();addDev();addPend();}
 var COLABS=["Marcelo Ferreira", "Edson Jose", "Francismark Cunha", "Everton Ribeiro", "Rafael Gomes", "Rodrigo Lima", "Pedro Oliveira", "Cleber Tussini", "Felipe Azulai", "Staynner Barbosa", "Victor Gabriel", "Rafael Everton", "Gabriel Martins", "Cleber Pontes", "Davi IOMT", "Douglas IOMT", "Jose Rosa IOMT", "Vitor IOMT", "Hebert IOMT", "Carlos IOMT", "Jefferson IOMT", "Drisley IOMT"];
 
+// -- COLABORADORES --
 function mkOpts(){var h='<option value="">Selecione</option>';COLABS.forEach(function(n){h+='<option value="'+n+'">'+n+'</option>';});return h;}
 function addCR(cid){var cont=document.getElementById(cid);var row=document.createElement('div');row.className='acr';var idx=cont.querySelectorAll('.acr').length;var rm=idx>0?'<button class="bi" onclick="this.parentElement.remove()" style="flex-shrink:0">x</button>':'';row.innerHTML='<select>'+mkOpts()+'</select>'+rm;cont.appendChild(row);}
+
+// -- ATIVIDADES --
 var AC=0;
-function addAct(){AC++;var id='a'+AC,phid='ph'+AC,fid='fi'+AC,pzid='pz'+AC,cid='cl'+AC;var d=document.createElement('div');d.className='ab';d.id=id;var rm=AC>1?'<button class="brm" onclick="document.getElementById(\''+id+'\').remove()">x Remover</button>':'';d.innerHTML='<span class="an">#'+AC+'</span><div><label>Descricao da Atividade</label><textarea placeholder="Descreva a atividade realizada..."></textarea></div><div><label>Fotos</label><div class="pz" id="'+pzid+'"><div class="pzi">&#128247;</div><p>Toque para anexar fotos</p><input type="file" id="'+fid+'" accept="image/*" multiple style="display:none"></div><div class="photos" id="'+phid+'"></div></div><div><label>Colaboradores desta Atividade</label><div class="acc" id="'+cid+'"></div><button class="ba" style="margin-top:6px;padding:8px 12px;font-size:.88rem" onclick="addCR(\''+cid+'\')">+ Colaborador</button></div>'+rm;document.getElementById('acts').appendChild(d);document.getElementById(pzid).addEventListener('click',function(){document.getElementById(fid).click();});document.getElementById(fid).addEventListener('change',function(){addPh(this,phid);});addCR(cid);}
+function addAct(){
+  AC++;
+  var id='a'+AC,phid='ph'+AC,fid='fi'+AC,pzid='pz'+AC,cid='cl'+AC;
+  var d=document.createElement('div');d.className='ab';d.id=id;
+  var rm=AC>1?'<button class="brm" onclick="document.getElementById(\''+id+'\').remove()">x Remover</button>':'';
+  d.innerHTML='<span class="an">#'+AC+'</span>'
+    +'<div><label>Descricao da Atividade</label>'
+    +'<textarea placeholder="Descreva a atividade realizada..."></textarea></div>'
+    +'<div><label>Fotos</label>'
+    +'<div class="pz" id="'+pzid+'"><div class="pzi">&#128247;</div><p>Toque para anexar fotos</p>'
+    +'<input type="file" id="'+fid+'" accept="image/*" multiple style="display:none"></div>'
+    +'<div class="photos" id="'+phid+'"></div></div>'
+    +'<div><label>Colaboradores desta Atividade</label>'
+    +'<div class="acc" id="'+cid+'"></div>'
+    +'<button class="ba" style="margin-top:6px;padding:8px 12px;font-size:.88rem" onclick="addCR(\''+cid+'\')">+ Colaborador</button>'
+    +'</div>'+rm;
+  document.getElementById('acts').appendChild(d);
+  document.getElementById(pzid).addEventListener('click',function(){document.getElementById(fid).click();});
+  document.getElementById(fid).addEventListener('change',function(){addPh(this,phid);});
+  addCR(cid);
+}
 function addPh(inp,pid){Array.from(inp.files).forEach(function(f){var r=new FileReader();r.onload=function(e){var img=document.createElement('img');img.className='thumb';img.src=e.target.result;img.dataset.b64=e.target.result;document.getElementById(pid).appendChild(img);};r.readAsDataURL(f);});}
+
+// -- AUSENCIAS --
 var AusC=0;
 function addAus(){AusC++;var id='as'+AusC,d=document.createElement('div');d.className='ausb';d.id=id;var rm=AusC>1?'<div style="text-align:right;margin-top:6px"><button class="bi" style="width:auto;padding:3px 11px;height:28px;font-size:.8rem" onclick="document.getElementById(\''+id+'\').remove()">x</button></div>':'';d.innerHTML='<div class="ausr"><input type="text" placeholder="Nome do colaborador"><select><option value="">Motivo</option><option>Ferias</option><option>Exame Periodico</option><option>Atestado Medico</option><option>Folga</option><option>Treinamento</option><option>Afastamento</option><option>Outro</option></select></div>'+rm;document.getElementById('ausl').appendChild(d);}
+
+// -- DESVIOS / PENDENCIAS --
 var DC=0;
 function addDev(){DC++;var id='dv'+DC,d=document.createElement('div');d.className='lrow';d.id=id;var rm=DC>1?'<button class="bi" onclick="document.getElementById(\''+id+'\').remove()">x</button>':'';d.innerHTML='<textarea placeholder="Atividade nao realizada e motivo..."></textarea>'+rm;document.getElementById('devs').appendChild(d);}
 var PC=0;
 function addPend(){PC++;var id='pd'+PC,d=document.createElement('div');d.className='lrow';d.id=id;var rm=PC>1?'<button class="bi" onclick="document.getElementById(\''+id+'\').remove()">x</button>':'';d.innerHTML='<textarea class="pup" placeholder="DESCREVA A PENDENCIA..."></textarea>'+rm;document.getElementById('pends').appendChild(d);}
+
+// -- TOAST --
 function toast(msg,ok){if(ok===undefined)ok=true;var t=document.getElementById('toast');t.textContent=msg;if(ok){t.style.borderColor='var(--ac)';t.style.color='var(--ac)';t.style.background='rgba(0,200,255,.15)';}else{t.style.borderColor='var(--red)';t.style.color='var(--red)';t.style.background='rgba(255,64,96,.15)';}t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
+
+// -- COLABS DA ATIVIDADE --
 function getAC(el){var ns=[];el.querySelectorAll('.acr select').forEach(function(s){if(s.value&&s.value.trim())ns.push(s.value.trim());});return ns;}
-function makeWPP(){var dv=document.getElementById('drel').value;var df=dv?dv.split('-').reverse().join('/'):'--';var hh=document.getElementById('hh').value;var rp=document.getElementById('resp').value||'--';var rc=document.getElementById('rcargo').value||'';var dd=document.getElementById('dds').value;var te=document.querySelector('input[name="tipo"]:checked');var tipo=te?te.value:'--';var ausNao=document.getElementById('ausn').checked;var L=[];L.push('*RELATORIO DE ATIVIDADES*');L.push('Equipe de Automacao - CSN Mineracao');L.push('---');L.push('');L.push('Data: '+df);if(hh)L.push('HH Disponivel: '+hh+' horas');L.push('Responsavel: '+rp+(rc?' - '+rc:''));L.push('Supervisores: Rodrigo Lima / Rafael Gomes');L.push('Lider: Edson Jose');if(dd)L.push('DDS: '+dd);L.push('');L.push('TIPO DE ATIVIDADE');L.push('---');L.push(tipo);if(te&&te.value==='Preventiva'){var pr=Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;});if(pr.length)L.push('Processos: '+pr.join(' | '));}var eq=document.getElementById('equip').value;if(eq)L.push('Equipamento: '+eq);L.push('');L.push('AUSENCIAS DO DIA');L.push('---');if(ausNao){L.push('Nenhuma ausencia no dia.');}else{var ab=document.querySelectorAll('.ausb'),ha=false;ab.forEach(function(b){var n=b.querySelector('input')?b.querySelector('input').value:'';var m=b.querySelector('select')?b.querySelector('select').value:'';if(n.trim()){ha=true;L.push('- '+n.trim()+(m?' ('+m+')':''));}});if(!ha)L.push('Nenhuma ausencia registrada.');}L.push('');var blks=document.querySelectorAll('.ab');if(blks.length){L.push('ATIVIDADES REALIZADAS');L.push('---');blks.forEach(function(b,i){var desc=b.querySelector('textarea')?b.querySelector('textarea').value:'';var imgs=b.querySelectorAll('.thumb');var col=getAC(b);L.push('');L.push('[ ATIVIDADE '+(i+1)+' ]');if(desc.trim())L.push(desc.trim());if(col.length)L.push('Colaboradores: '+col.join(', '));if(imgs.length)L.push('Fotos: '+imgs.length+' foto(s)');});L.push('');}var devs=Array.from(document.querySelectorAll('#devs textarea')).map(function(t){return t.value;}).filter(function(v){return v.trim();});if(devs.length){L.push('ATIVIDADES NAO REALIZADAS');L.push('---');devs.forEach(function(d,i){L.push((i+1)+'. '+d);});L.push('');}var pds=Array.from(document.querySelectorAll('#pends textarea')).map(function(t){return t.value.toUpperCase();}).filter(function(v){return v.trim();});if(pds.length){L.push('PENDENCIAS ENCONTRADAS');L.push('---');pds.forEach(function(p,i){L.push((i+1)+'. '+p);});L.push('');}L.push('---');L.push('Gerado por Lima Store');document.getElementById('wt').value=L.join('\n');document.getElementById('wmod').classList.add('show');}
-document.getElementById('wcp').addEventListener('click',function(){var t=document.getElementById('wt');t.select();t.setSelectionRange(0,99999);var ok=false;try{ok=document.execCommand('copy');}catch(e){}if(!ok&&navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){toast('Texto copiado!');});return;}toast(ok?'Texto copiado!':'Selecione e copie.');});
+
+// -- WHATSAPP (mant\u00e9m acentos, \u00e9 texto n\u00e3o PDF) --
+function makeWPP(){
+  var dv=document.getElementById('drel').value;
+  var df=dv?dv.split('-').reverse().join('/'):'--';
+  var hh=document.getElementById('hh').value;
+  var rp=document.getElementById('resp').value||'--';
+  var rc=document.getElementById('rcargo').value||'';
+  var dd=document.getElementById('dds').value;
+  var te=document.querySelector('input[name="tipo"]:checked');
+  var tipo=te?te.value:'--';
+  var ausNao=document.getElementById('ausn').checked;
+  var L=[];
+  L.push('\u1f3ed *RELATORIO DE ATIVIDADES*');
+  L.push('\u2699\ufe0f Equipe de Automacao - CSN Mineracao');
+  L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
+  L.push('');
+  L.push('\u1f4c5 *Data:* '+df);
+  if(hh)L.push('\u23f1 *HH Disponivel:* '+hh+' horas');
+  L.push('\u1f464 *Responsavel:* '+rp+(rc?' - '+rc:''));
+  L.push('\u1f454 *Supervisores:* Rodrigo Lima / Rafael Gomes');
+  L.push('\u1f511 *Lider:* Edson Jose');
+  if(dd)L.push('\u1f6e1 *DDS:* '+dd);
+  L.push('');
+  L.push('\u1f527 *TIPO DE ATIVIDADE*');
+  L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
+  L.push('\u25b8 '+tipo);
+  if(te&&te.value==='Preventiva'){var pr=Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;});if(pr.length)L.push('\u1f4cc Processos: '+pr.join(' | '));}
+  var eq=document.getElementById('equip').value;if(eq)L.push('\u1f5a5 Equipamento: '+eq);
+  L.push('');
+  L.push('\u1f5d3 *AUSENCIAS DO DIA*');
+  L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
+  if(ausNao){L.push('\u2705 Nenhuma ausencia no dia.');}
+  else{var ab=document.querySelectorAll('.ausb'),ha=false;ab.forEach(function(b){var n=b.querySelector('input')?b.querySelector('input').value:'';var m=b.querySelector('select')?b.querySelector('select').value:'';if(n.trim()){ha=true;L.push('\u274c '+n.trim()+(m?' ('+m+')':''));}});if(!ha)L.push('\u2705 Nenhuma ausencia registrada.');}
+  L.push('');
+  var blks=document.querySelectorAll('.ab');
+  if(blks.length){
+    L.push('\u26a1 *ATIVIDADES REALIZADAS*');
+    L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
+    blks.forEach(function(b,i){
+      var desc=b.querySelector('textarea')?b.querySelector('textarea').value:'';
+      var imgs=b.querySelectorAll('.thumb');var col=getAC(b);
+      L.push('');
+      L.push('*[ ATIVIDADE '+(i+1)+' ]*');
+      if(desc.trim())L.push(desc.trim());
+      if(col.length)L.push('\u1f477 Colaboradores: '+col.join(', '));
+      if(imgs.length)L.push('\u1f4f8 '+imgs.length+' foto(s) - enviar apos este texto');
+    });
+    L.push('');
+  }
+  var devs=Array.from(document.querySelectorAll('#devs textarea')).map(function(t){return t.value;}).filter(function(v){return v.trim();});
+  if(devs.length){L.push('\u26a0\ufe0f *ATIVIDADES NAO REALIZADAS / DESVIOS*');L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');devs.forEach(function(d,i){L.push((i+1)+'. '+d);});L.push('');}
+  var pds=Array.from(document.querySelectorAll('#pends textarea')).map(function(t){return t.value.toUpperCase();}).filter(function(v){return v.trim();});
+  if(pds.length){L.push('\u1f534 *PENDENCIAS ENCONTRADAS*');L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');pds.forEach(function(p,i){L.push((i+1)+'. '+p);});L.push('');}
+  L.push('\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501');
+  L.push('_Gerado por Lima Store - Sistema de Relatorios_');
+  document.getElementById('wt').value=L.join('\n');
+  document.getElementById('wmod').classList.add('show');
+}
+document.getElementById('wcp').addEventListener('click',function(){
+  var t=document.getElementById('wt');t.select();t.setSelectionRange(0,99999);
+  var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){toast('Texto copiado! Cole no WhatsApp.');});return;}
+  toast(ok?'Texto copiado! Cole no WhatsApp.':'Selecione e copie manualmente.');
+});
 document.getElementById('wcl').addEventListener('click',function(){document.getElementById('wmod').classList.remove('show');});
-async function makePDF(){var jsPDF=window.jspdf.jsPDF;var doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});var W=210,H=297,ML=20,MR=20,MT=28,MB=22,CW=170;var y=MT;var Cn={navy:[4,18,48],blue:[0,55,155],cyan:[0,145,195],white:[255,255,255],lgray:[240,245,252],mgray:[175,198,218],dgray:[75,95,125],text:[18,28,52],dim:[115,135,158],accent:[0,100,170]};function fR(x,ry,w,h,c){doc.setFillColor(c[0],c[1],c[2]);doc.rect(x,ry,w,h,'F');}function sR(x,ry,w,h,c,lw){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(lw||0.35);doc.rect(x,ry,w,h,'S');}function sF(sz,c,b){doc.setFontSize(sz);doc.setTextColor(c[0],c[1],c[2]);doc.setFont('helvetica',b?'bold':'normal');}function dBrd(){doc.setDrawColor(Cn.navy[0],Cn.navy[1],Cn.navy[2]);doc.setLineWidth(0.9);doc.rect(10,10,W-20,H-20,'S');doc.setDrawColor(Cn.cyan[0],Cn.cyan[1],Cn.cyan[2]);doc.setLineWidth(0.35);doc.rect(12,12,W-24,H-24,'S');}function dFoot(pn,pt){doc.setDrawColor(Cn.cyan[0],Cn.cyan[1],Cn.cyan[2]);doc.setLineWidth(0.3);doc.line(ML,H-MB+4,W-MR,H-MB+4);sF(8,Cn.dim,false);doc.text('CSN MINERACAO - EQUIPE DE AUTOMACAO',ML,H-MB+10);doc.text('Pag '+pn+(pt?'/'+pt:''),W-MR,H-MB+10,{align:'right'});doc.text(new Date().toLocaleDateString('pt-BR'),W/2,H-MB+10,{align:'center'});}function nPg(){dBrd();doc.addPage();y=MT;dBrd();}function chk(n){if(y+n>H-MB-14)nPg();}function wT(txt,x,mw,fsz,col,bld){sF(fsz,col,bld);var lines=doc.splitTextToSize(String(txt||''),mw);lines.forEach(function(ln){chk(fsz*0.45+3);doc.text(ln,x,y);y+=fsz*0.45+3;});}function sB(t){chk(16);fR(ML,y,CW,13,Cn.blue);sR(ML,y,CW,13,Cn.cyan,0.5);sF(12,Cn.white,true);doc.text(t,ML+5,y+9.2);y+=17;}function lF(lbl,val){if(!val||!String(val).trim())return;chk(24);sF(9,Cn.accent,true);doc.text(lbl+':',ML,y);y+=6;wT(val,ML+2,CW-4,12,Cn.text,false);y+=4;}function iB(bx,by,bw,bh,lbl,val){fR(bx,by,bw,bh,Cn.lgray);sR(bx,by,bw,bh,Cn.mgray,0.3);sF(8,Cn.dgray,true);doc.text(lbl,bx+3,by+6);sF(12,Cn.text,false);var ls=doc.splitTextToSize(String(val||'--'),bw-6);doc.text(ls[0],bx+3,by+15);}dBrd();fR(ML-1,MT-8,CW+2,56,Cn.navy);fR(ML-1,MT-8,CW+2,1.5,Cn.cyan);fR(ML-1,MT+46,CW+2,1.5,Cn.cyan);sF(20,Cn.white,true);doc.text('RELATORIO DE ATIVIDADES',W/2,MT+10,{align:'center'});sF(11,Cn.cyan,false);doc.text('EQUIPE DE AUTOMACAO - CSN MINERACAO',W/2,MT+23,{align:'center'});sF(9,[180,220,255],false);doc.text('CSN MINERACAO S.A. - Automacao Industrial',W/2,MT+35,{align:'center'});var sp=null;try{sp=localStorage.getItem('rp1');}catch(e){}if(sp){try{doc.addImage(sp,'PNG',W-MR-32,MT-6,28,28);sR(W-MR-32,MT-6,28,28,Cn.cyan,0.45);}catch(e){}}y=MT+54;var dv=document.getElementById('drel').value;var df=dv?dv.split('-').reverse().join('/'):'--';var hh=document.getElementById('hh').value;var rp=document.getElementById('resp').value||'--';var rc=document.getElementById('rcargo').value||'';var dd=document.getElementById('dds').value;var bh=24,cw3=(CW-8)/3,cw2=(CW-4)/2;iB(ML,y,cw3,bh,'EMPRESA','CSN Mineracao');iB(ML+cw3+4,y,cw3,bh,'EQUIPE','Automacao');iB(ML+2*cw3+8,y,cw3,bh,'DATA',df);y+=bh+4;iB(ML,y,cw2-2,bh,'RESPONSAVEL',rp+(rc?' - '+rc:''));iB(ML+cw2+2,y,cw2-2,bh,'HH DISPONIVEL',hh?hh+' horas':'--');y+=bh+6;chk(18);sF(9,Cn.accent,true);doc.text('SUPERVISORES / LIDER:',ML,y);y+=6;sF(12,Cn.text,false);doc.text('Supervisores: Rodrigo Lima / Rafael Gomes',ML+2,y);y+=7;doc.text('Lider: Edson Jose',ML+2,y);y+=10;if(dd)lF('TEMA DO DDS',dd);sB('TIPO DE ATIVIDADE');var te=document.querySelector('input[name="tipo"]:checked');lF('CLASSIFICACAO',te?te.value:'--');if(te&&te.value==='Preventiva'){var pr=Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;});if(pr.length)lF('PROCESSOS EM PREVENTIVA',pr.join(' | '));}lF('EQUIPAMENTO',document.getElementById('equip').value);var ausN=document.getElementById('ausn').checked;sB('AUSENCIAS DO DIA');if(ausN){sF(12,Cn.text,false);doc.text('Nenhuma ausencia no dia.',ML,y);y+=9;}else{var ab=document.querySelectorAll('.ausb'),ha=false;ab.forEach(function(b,i){var n=b.querySelector('input')?b.querySelector('input').value:'';var m=b.querySelector('select')?b.querySelector('select').value:'';if(n.trim()){ha=true;chk(10);sF(12,Cn.text,false);doc.text((i+1)+'.  '+n.trim()+(m?' - '+m:''),ML,y);y+=9;}});if(!ha){sF(12,Cn.text,false);doc.text('Nenhuma ausencia registrada.',ML,y);y+=9;}}y+=4;var blks=document.querySelectorAll('.ab');if(blks.length)sB('ATIVIDADES REALIZADAS');blks.forEach(function(blk,i){var desc=blk.querySelector('textarea')?blk.querySelector('textarea').value:'';var imgs=blk.querySelectorAll('.thumb');var col=getAC(blk);chk(20);fR(ML,y,CW,11,[18,48,100]);sR(ML,y,CW,11,Cn.cyan,0.4);sF(11,Cn.white,true);doc.text('ATIVIDADE '+(i+1),ML+5,y+7.8);y+=15;if(desc.trim())wT(desc.trim(),ML+2,CW-6,12,Cn.text,false);y+=4;if(col.length){chk(10);sF(9,Cn.accent,true);doc.text('Colaboradores:',ML,y);y+=6;sF(12,Cn.text,false);wT(col.join(' | '),ML+2,CW-6,12,Cn.text,false);y+=4;}if(imgs.length){chk(14);sF(9,Cn.accent,true);doc.text('REGISTRO FOTOGRAFICO:',ML,y);y+=8;var ia=Array.from(imgs),gap=5,iw=(CW-gap)/2,ih=Math.round(iw*0.68);for(var j=0;j<ia.length;j+=2){chk(ih+10);try{doc.addImage(ia[j].dataset.b64,'JPEG',ML,y,iw,ih);sR(ML,y,iw,ih,Cn.cyan,0.35);}catch(e){}if(ia[j+1]){try{doc.addImage(ia[j+1].dataset.b64,'JPEG',ML+iw+gap,y,iw,ih);sR(ML+iw+gap,y,iw,ih,Cn.cyan,0.35);}catch(e){}}y+=ih+gap;}y+=5;}y+=7;});var devs=Array.from(document.querySelectorAll('#devs textarea')).map(function(t){return t.value;}).filter(function(v){return v.trim();});if(devs.length){sB('ATIVIDADES NAO REALIZADAS');devs.forEach(function(d,i){chk(20);sF(10,Cn.text,true);doc.text('Desvio '+(i+1)+':',ML,y);y+=7;wT(d.trim(),ML+2,CW-6,12,Cn.text,false);y+=6;});}var pds=Array.from(document.querySelectorAll('#pends textarea')).map(function(t){return t.value.toUpperCase();}).filter(function(v){return v.trim();});if(pds.length){sB('PENDENCIAS ENCONTRADAS');pds.forEach(function(p,i){chk(20);sF(10,Cn.text,true);doc.text('Pendencia '+(i+1)+':',ML,y);y+=7;wT(p.trim(),ML+2,CW-6,12,Cn.text,true);y+=6;});}var tot=doc.getNumberOfPages();for(var pg=1;pg<=tot;pg++){doc.setPage(pg);dFoot(pg,tot);}var fn='Relatorio_Automacao_'+df.replace(/[/]/g,'-')+'.pdf';var bl=doc.output('blob');if(navigator.share){try{await navigator.share({title:'Relatorio CSN',files:[new File([bl],fn,{type:'application/pdf'})]});toast('PDF compartilhado!');}catch(e){if(e.name!=='AbortError'){doc.save(fn);toast('PDF salvo!');}}}else{doc.save(fn);toast('PDF salvo!');}}</script>
+
+// ================================================================
+// PDF - USA sa() para remover acentos antes de passar para jsPDF
+// ================================================================
+async function makePDF(){
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  var W=210,H=297,ML=20,MR=20,MT=30,MB=22,CW=170;
+  var y=MT;
+
+  var Cn={
+    navy:[4,18,48],blue:[0,55,155],cyan:[0,145,195],
+    white:[255,255,255],lgray:[240,245,252],mgray:[175,198,218],
+    dgray:[75,95,125],text:[18,28,52],dim:[115,135,158],accent:[0,100,170]
+  };
+
+  function fR(x,ry,w,h,c){doc.setFillColor(c[0],c[1],c[2]);doc.rect(x,ry,w,h,'F');}
+  function sR(x,ry,w,h,c,lw){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(lw||0.35);doc.rect(x,ry,w,h,'S');}
+  function sF(sz,c,b){doc.setFontSize(sz);doc.setTextColor(c[0],c[1],c[2]);doc.setFont('helvetica',b?'bold':'normal');}
+
+  function dBrd(){
+    doc.setDrawColor(Cn.navy[0],Cn.navy[1],Cn.navy[2]);doc.setLineWidth(0.9);doc.rect(10,10,W-20,H-20,'S');
+    doc.setDrawColor(Cn.cyan[0],Cn.cyan[1],Cn.cyan[2]);doc.setLineWidth(0.35);doc.rect(12,12,W-24,H-24,'S');
+  }
+  function dFoot(pn,pt){
+    doc.setDrawColor(Cn.cyan[0],Cn.cyan[1],Cn.cyan[2]);doc.setLineWidth(0.3);
+    doc.line(ML,H-MB+4,W-MR,H-MB+4);
+    sF(8,Cn.dim,false);
+    doc.text('CSN MINERACAO - EQUIPE DE AUTOMACAO',ML,H-MB+10);
+    doc.text('Pag '+pn+(pt?'/'+pt:''),W-MR,H-MB+10,{align:'right'});
+    doc.text(new Date().toLocaleDateString('pt-BR'),W/2,H-MB+10,{align:'center'});
+  }
+  function nPg(){dBrd();doc.addPage();y=MT;dBrd();}
+  function chk(n){if(y+n>H-MB-14)nPg();}
+
+  // Escreve texto com quebra de linha automatica - sempre com sa()
+  function wT(raw,x,mw,fsz,col,bld){
+    var txt=sa(raw);
+    sF(fsz,col,bld);
+    var lines=doc.splitTextToSize(txt,mw);
+    lines.forEach(function(ln){chk(fsz*0.45+3);doc.text(ln,x,y);y+=fsz*0.45+3;});
+  }
+
+  function sB(title){
+    chk(16);
+    fR(ML,y,CW,13,Cn.blue);sR(ML,y,CW,13,Cn.cyan,0.5);
+    sF(13,Cn.white,true);doc.text(sa(title),ML+5,y+9.5);
+    y+=17;
+  }
+
+  function lF(lbl,val){
+    if(!val||!String(val).trim())return;
+    chk(24);
+    sF(9,Cn.accent,true);doc.text(sa(lbl)+':',ML,y);y+=6;
+    wT(val,ML+2,CW-4,12,Cn.text,false);
+    y+=4;
+  }
+
+  function iB(bx,by,bw,bh,lbl,val){
+    fR(bx,by,bw,bh,Cn.lgray);sR(bx,by,bw,bh,Cn.mgray,0.3);
+    sF(8,Cn.dgray,true);doc.text(sa(lbl),bx+3,by+6);
+    sF(12,Cn.text,false);
+    var ls=doc.splitTextToSize(sa(String(val||'--')),bw-6);
+    doc.text(ls[0],bx+3,by+16);
+  }
+
+  // -- CABECALHO PAG 1 --
+  dBrd();
+  // Faixa azul cabecalho
+  fR(ML-1,MT-10,CW+2,58,Cn.navy);
+  fR(ML-1,MT-10,CW+2,1.5,Cn.cyan);
+  fR(ML-1,MT+46,CW+2,1.5,Cn.cyan);
+
+  // Titulos centralizados
+  sF(20,Cn.white,true);
+  doc.text('RELATORIO DE ATIVIDADES',W/2,MT+8,{align:'center'});
+  sF(11,Cn.cyan,false);
+  doc.text('EQUIPE DE AUTOMACAO - CSN MINERACAO',W/2,MT+21,{align:'center'});
+  sF(9,[180,220,255],false);
+  doc.text('CSN MINERACAO S.A. - Automacao Industrial',W/2,MT+33,{align:'center'});
+
+  // FOTO DO RESPONSAVEL - canto direito do cabecalho
+  var sp=null;try{sp=localStorage.getItem('rp1');}catch(e){}
+  if(sp){
+    try{
+      // Foto no lado direito, dentro da faixa azul
+      var fx=W-MR-30, fy=MT-8, fw=26, fh=26;
+      doc.addImage(sp,'PNG',fx,fy,fw,fh);
+      sR(fx,fy,fw,fh,Cn.cyan,0.5);
+      sF(7,Cn.cyan,false);
+      doc.text('RESP.',fx+fw/2,fy+fh+4,{align:'center'});
+    }catch(e){console.warn('Foto erro:',e);}
+  }
+
+  y=MT+54;
+
+  // Grade de identificacao
+  var dv=document.getElementById('drel').value;
+  var df=dv?dv.split('-').reverse().join('/'):'--';
+  var hh=document.getElementById('hh').value;
+  var rp=sa(document.getElementById('resp').value||'--');
+  var rc=sa(document.getElementById('rcargo').value||'');
+  var dd=document.getElementById('dds').value;
+
+  var bh=26,cw3=(CW-8)/3,cw2=(CW-4)/2;
+  iB(ML,      y,cw3,bh,'EMPRESA',  'CSN Mineracao');
+  iB(ML+cw3+4,y,cw3,bh,'EQUIPE',   'Automacao');
+  iB(ML+2*cw3+8,y,cw3,bh,'DATA',   df);
+  y+=bh+5;
+  iB(ML,      y,cw2-2,bh,'RESPONSAVEL', rp+(rc?' - '+rc:''));
+  iB(ML+cw2+2,y,cw2-2,bh,'HH DISPONIVEL', hh?hh+' horas':'--');
+  y+=bh+7;
+
+  // Supervisores
+  chk(18);
+  sF(9,Cn.accent,true);doc.text('SUPERVISORES / LIDER:',ML,y);y+=7;
+  sF(12,Cn.text,false);
+  doc.text('Supervisores: Rodrigo Lima / Rafael Gomes',ML+2,y);y+=7;
+  doc.text('Lider: Edson Jose',ML+2,y);y+=12;
+
+  if(dd)lF('TEMA DO DDS',dd);
+
+  // Tipo atividade
+  sB('TIPO DE ATIVIDADE');
+  var te=document.querySelector('input[name="tipo"]:checked');
+  lF('CLASSIFICACAO',te?te.value:'--');
+  if(te&&te.value==='Preventiva'){
+    var pr=Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;});
+    if(pr.length)lF('PROCESSOS EM PREVENTIVA',pr.join(' | '));
+  }
+  lF('EQUIPAMENTO',document.getElementById('equip').value);
+
+  // Ausencias
+  var ausN=document.getElementById('ausn').checked;
+  sB('AUSENCIAS DO DIA');
+  if(ausN){
+    sF(12,Cn.text,false);doc.text('Nenhuma ausencia no dia.',ML,y);y+=10;
+  }else{
+    var ab=document.querySelectorAll('.ausb'),ha=false;
+    ab.forEach(function(b,i){
+      var n=b.querySelector('input')?b.querySelector('input').value:'';
+      var m=b.querySelector('select')?b.querySelector('select').value:'';
+      if(n.trim()){ha=true;chk(10);sF(12,Cn.text,false);doc.text((i+1)+'.  '+sa(n.trim())+(m?' - '+sa(m):''),ML,y);y+=10;}
+    });
+    if(!ha){sF(12,Cn.text,false);doc.text('Nenhuma ausencia registrada.',ML,y);y+=10;}
+  }
+  y+=4;
+
+  // Atividades
+  var blks=document.querySelectorAll('.ab');
+  if(blks.length)sB('ATIVIDADES REALIZADAS');
+  blks.forEach(function(blk,i){
+    var desc=blk.querySelector('textarea')?blk.querySelector('textarea').value:'';
+    var imgs=blk.querySelectorAll('.thumb');
+    var col=getAC(blk);
+
+    chk(20);
+    fR(ML,y,CW,12,[18,48,100]);sR(ML,y,CW,12,Cn.cyan,0.4);
+    sF(12,Cn.white,true);doc.text('ATIVIDADE '+(i+1),ML+5,y+8.5);
+    y+=16;
+
+    if(desc.trim()){wT(desc.trim(),ML+2,CW-4,12,Cn.text,false);}
+    y+=4;
+
+    if(col.length){
+      chk(10);sF(9,Cn.accent,true);doc.text('Colaboradores:',ML,y);y+=7;
+      sF(12,Cn.text,false);
+      // lista vertical de colaboradores
+      col.forEach(function(c){chk(8);doc.text('- '+sa(c),ML+4,y);y+=7;});
+      y+=3;
+    }
+
+    if(imgs.length){
+      chk(14);sF(9,Cn.accent,true);doc.text('REGISTRO FOTOGRAFICO:',ML,y);y+=8;
+      var ia=Array.from(imgs),gap=6,iw=(CW-gap)/2,ih=Math.round(iw*0.70);
+      for(var j=0;j<ia.length;j+=2){
+        chk(ih+10);
+        try{doc.addImage(ia[j].dataset.b64,'JPEG',ML,y,iw,ih);sR(ML,y,iw,ih,Cn.cyan,0.35);}catch(e){}
+        if(ia[j+1]){try{doc.addImage(ia[j+1].dataset.b64,'JPEG',ML+iw+gap,y,iw,ih);sR(ML+iw+gap,y,iw,ih,Cn.cyan,0.35);}catch(e){}}
+        y+=ih+gap;
+      }
+      y+=4;
+    }
+    y+=8;
+  });
+
+  // Desvios
+  var devs=Array.from(document.querySelectorAll('#devs textarea')).map(function(t){return t.value;}).filter(function(v){return v.trim();});
+  if(devs.length){
+    sB('ATIVIDADES NAO REALIZADAS / DESVIOS');
+    devs.forEach(function(d,i){
+      chk(20);
+      sF(10,Cn.text,true);doc.text('Desvio '+(i+1)+':',ML,y);y+=7;
+      wT(d.trim(),ML+2,CW-4,12,Cn.text,false);y+=6;
+    });
+  }
+
+  // Pendencias
+  var pds=Array.from(document.querySelectorAll('#pends textarea')).map(function(t){return t.value.toUpperCase();}).filter(function(v){return v.trim();});
+  if(pds.length){
+    sB('PENDENCIAS ENCONTRADAS');
+    pds.forEach(function(p,i){
+      chk(20);
+      sF(10,Cn.text,true);doc.text('Pendencia '+(i+1)+':',ML,y);y+=7;
+      wT(p.trim(),ML+2,CW-4,12,Cn.text,true);y+=6;
+    });
+  }
+
+  // Rodape todas as paginas
+  var tot=doc.getNumberOfPages();
+  for(var pg=1;pg<=tot;pg++){doc.setPage(pg);dFoot(pg,tot);}
+
+  // Salvar/compartilhar
+  var fn='Relatorio_Automacao_'+df.replace(/[/]/g,'-')+'.pdf';
+  var bl=doc.output('blob');
+  if(navigator.share){
+    try{await navigator.share({title:'Relatorio CSN',files:[new File([bl],fn,{type:'application/pdf'})]});toast('PDF compartilhado!');}
+    catch(e){if(e.name!=='AbortError'){doc.save(fn);toast('PDF salvo!');}}
+  }else{doc.save(fn);toast('PDF salvo!');}
+}
+</script>
 </body>
 </html>
