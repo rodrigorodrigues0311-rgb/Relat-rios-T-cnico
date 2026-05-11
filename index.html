@@ -1042,9 +1042,9 @@ function hideSync(){var el=document.getElementById('sync-status');if(el)el.style
 
 // \u2500\u2500 PWA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var PE=null,SOK=false;
-if('serviceWorker'in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(function(){});
-}
+// SW desabilitado para teste
+// Desregistra SW antigo
+if('serviceWorker'in navigator){navigator.serviceWorker.getRegistrations().then(function(regs){regs.forEach(function(r){r.unregister();});});}
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();PE=e;if(SOK)showIC();});
 window.addEventListener('appinstalled',function(){hideIC();PE=null;});
 function showIC(){if(!PE||window.matchMedia('(display-mode:standalone)').matches)return;document.getElementById('ic').classList.add('show');}
