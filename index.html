@@ -17,6 +17,7 @@
 <title>Relatorios Automacao - CSN</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -409,7 +410,15 @@ select.fi option{background:#fff}
       </div>
     </div>
     <div class="scroll">
-      <div class="dash-grid">
+      <div id="collab-banner" style="display:none;margin:12px 16px 0;background:linear-gradient(135deg,#e3f2fd,#f0f7ff);border:1px solid #90caf9;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+  <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">&#128101;</div>
+  <div style="flex:1">
+    <div style="font-size:.82rem;font-weight:700;color:var(--blue)">Modo Colaborativo Ativo</div>
+    <div style="font-size:.72rem;color:var(--g500)">Relatorios sincronizados com a equipe em tempo real</div>
+  </div>
+  <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#43a047;box-shadow:0 0 8px #43a047"></div>
+</div>
+<div class="dash-grid">
         <div class="dc blue" onclick="startReport()">
           <div class="dc-ico blue">&#128203;</div>
           <div class="dc-t">Novo Relatorio</div>
@@ -812,10 +821,280 @@ select.fi option{background:#fff}
     </div>
   </div>
 
+
+  <!-- SUPABASE CONFIG MODAL -->
+  <div class="modal-ov2" id="supa-config-ov">
+    <div class="modal-sh">
+      <div class="modal-hd"></div>
+      <div class="modal-title">&#127760; Configurar Sincronizacao</div>
+      <p style="font-size:.82rem;color:var(--g500);margin-bottom:16px;line-height:1.6">
+        Para sincronizar relatorios com toda a equipe em tempo real, configure o Supabase.
+        Acesse <strong>supabase.com</strong>, crie um projeto gratuito e cole as credenciais abaixo.
+      </p>
+      <div class="form-sec">
+        <label class="form-label">URL do Projeto</label>
+        <input type="text" class="fi" id="supa-url" placeholder="https://xxxxx.supabase.co">
+      </div>
+      <div class="form-sec">
+        <label class="form-label">Chave Anon (anon key)</label>
+        <input type="text" class="fi" id="supa-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5c...">
+      </div>
+      <div style="background:var(--blue-lt);border-radius:10px;padding:12px;margin-bottom:16px">
+        <div style="font-size:.78rem;font-weight:700;color:var(--blue);margin-bottom:6px">&#9888; SQL necessario no Supabase:</div>
+        <pre style="font-size:.68rem;color:var(--g700);white-space:pre-wrap;line-height:1.5">CREATE TABLE relatorios (
+  proto TEXT PRIMARY KEY,
+  data TEXT,
+  tipo TEXT,
+  resp TEXT,
+  cargo TEXT,
+  hh TEXT,
+  om TEXT,
+  dds TEXT,
+  equip TEXT,
+  status TEXT DEFAULT 'enviado',
+  conteudo TEXT,
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE relatorios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Acesso publico" ON relatorios FOR ALL USING (true);</pre>
+      </div>
+      <button class="btn-full" onclick="saveSupaConfig()">Conectar e Sincronizar</button>
+      <button id="supa-test-btn" style="width:100%;padding:13px;background:var(--g100);border:none;border-radius:var(--r);font-size:.9rem;color:var(--g700);cursor:pointer;margin-top:8px;font-family:var(--font)" onclick="testSupaConnection()">Testar Conexao</button>
+      <button style="width:100%;padding:13px;background:transparent;border:none;font-size:.85rem;color:var(--g400);cursor:pointer;margin-top:4px;font-family:var(--font)" onclick="closeSupaConfig()">Cancelar</button>
+    </div>
+  </div>
 </div><!-- #app -->
 <div id="toast"></div>
 
 <script>
+
+
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// SUPABASE \u2014 Sincroniza\u00e7\u00e3o em Tempo Real
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// CONFIGURE AQUI com seus dados do Supabase:
+var SUPA_URL = 'https://viosfzgzljrlfsqjixog.supabase.co';
+var SUPA_KEY = 'sb_publishable_W5HRKqABzXgbPi0dj-S-QQ_bOrk7G6h';
+
+var supabase = null;
+var realtimeSub = null;
+var DB_OK = false;
+
+// Inicializa o Supabase
+function dbInit(){
+  try{
+    if(typeof window.supabase !== 'undefined' && SUPA_URL.indexOf('supabase.co') > 0 && SUPA_KEY.length > 10){
+      supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+        auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: false},
+        realtime: {params: {eventsPerSecond: 2}},
+        global: {
+          headers: {
+            'X-Client-Info': 'csn-automacao-app/1.0',
+            'apikey': SUPA_KEY
+          }
+        },
+        db: {schema: 'public'}
+      });
+      DB_OK = true;
+      console.log('Supabase conectado!');
+      dbSubscribe();
+      // Mostra banner colaborativo
+      var cb=document.getElementById('collab-banner');
+      if(cb)cb.style.display='flex';
+      var sl=document.getElementById('supa-status-label');
+      if(sl)sl.textContent='Conectado - sincronizando em tempo real';
+    } else {
+      console.warn('Supabase nao configurado - usando localStorage apenas');
+    }
+  }catch(e){
+    console.warn('Supabase erro:', e);
+    var sl=document.getElementById('supa-status-label');
+    if(sl)sl.textContent='Erro de conexao - modo offline';
+  }
+}
+
+// \u2500\u2500 SALVAR relat\u00f3rio no Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+async function dbSaveReport(report){
+  if(!DB_OK){ 
+    // Fallback: localStorage
+    saveHistoryLocal(report);
+    return;
+  }
+  try{
+    var payload = {
+      proto: report.proto,
+      data: report.date,
+      tipo: report.tipo,
+      resp: report.resp,
+      cargo: report.cargo,
+      hh: report.hh,
+      om: report.om,
+      dds: report.dds,
+      equip: report.equip,
+      status: report.status || 'enviado',
+      conteudo: JSON.stringify(report),
+      criado_em: new Date().toISOString()
+    };
+    var result = await supabase.from('relatorios').upsert(payload, {onConflict:'proto'});
+    if(result.error) throw result.error;
+    console.log('Relatorio salvo no Supabase:', report.proto);
+    saveHistoryLocal(report); // salva local tamb\u00e9m
+  }catch(e){
+    console.warn('Supabase save erro:', e);
+    saveHistoryLocal(report);
+  }
+}
+
+// \u2500\u2500 SALVAR rascunho compartilhado \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+async function dbSaveDraft(draft){
+  if(!DB_OK){ 
+    try{localStorage.setItem('draft1', JSON.stringify(draft));}catch(e){}
+    S.hasDraft = true; updateDraftBadge();
+    return;
+  }
+  try{
+    draft.status = 'rascunho';
+    draft.proto = draft.proto || 'RASCUNHO-' + Date.now();
+    var payload = {
+      proto: draft.proto,
+      data: draft.data || draft.date || '',
+      tipo: draft.tipo || '',
+      resp: draft.resp || '',
+      cargo: '',
+      status: 'rascunho',
+      conteudo: JSON.stringify(draft),
+      criado_em: new Date().toISOString()
+    };
+    await supabase.from('relatorios').upsert(payload, {onConflict:'proto'});
+    try{localStorage.setItem('draft1', JSON.stringify(draft));localStorage.setItem('draft_proto', draft.proto);}catch(e){}
+    S.hasDraft = true; updateDraftBadge();
+    showSyncStatus('Rascunho sincronizado com a equipe');
+  }catch(e){
+    console.warn('Draft save erro:', e);
+    try{localStorage.setItem('draft1', JSON.stringify(draft));}catch(e2){}
+  }
+}
+
+// \u2500\u2500 CARREGAR hist\u00f3rico do Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+async function dbLoadHistory(){
+  if(!DB_OK){
+    loadHistoryAll();
+    return;
+  }
+  try{
+    showSyncStatus('Sincronizando com a equipe...');
+    var result = await supabase
+      .from('relatorios')
+      .select('*')
+      .order('criado_em', {ascending: false})
+      .limit(100);
+    if(result.error) throw result.error;
+    var rows = result.data || [];
+    // Converte para formato interno
+    S.history = rows.map(function(row){
+      try{
+        var r = JSON.parse(row.conteudo);
+        r.proto = row.proto;
+        r.status = row.status;
+        return r;
+      }catch(e){ return {proto:row.proto, date:row.data, tipo:row.tipo, resp:row.resp, acts:[], status:row.status, abss:[], devs:[], pends:[], photoCount:0}; }
+    });
+    // Separa rascunho do hist\u00f3rico
+    var draft = S.history.find(function(r){ return r.status === 'rascunho'; });
+    S.history = S.history.filter(function(r){ return r.status !== 'rascunho'; });
+    if(draft){
+      S.hasDraft = true;
+      try{localStorage.setItem('draft1', JSON.stringify(draft));localStorage.setItem('draft_proto', draft.proto);}catch(e){}
+      updateDraftBadge();
+    }
+    renderDashRecent();
+    renderHistory();
+    hideSyncStatus();
+    console.log('Historico carregado:', S.history.length, 'relatorios');
+  }catch(e){
+    console.warn('Supabase load erro:', e.message||e);
+    loadHistoryFromStorage();
+    hideSyncStatus();
+    // Se for erro de CORS/origin, mostra instrucao
+    if(e.message&&(e.message.indexOf('CORS')>=0||e.message.indexOf('allowlist')>=0||e.message.indexOf('Failed to fetch')>=0)){
+      toast('Configure o dominio no Supabase Settings > API');
+    }
+  }
+}
+
+// \u2500\u2500 REALTIME: ouve mudan\u00e7as em tempo real \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function dbSubscribe(){
+  if(!DB_OK || !supabase) return;
+  try{
+    realtimeSub = supabase
+      .channel('relatorios-changes')
+      .on('postgres_changes', {event:'*', schema:'public', table:'relatorios'}, function(payload){
+        console.log('Realtime update:', payload.eventType);
+        handleRealtimeUpdate(payload);
+      })
+      .subscribe();
+    console.log('Realtime subscription ativo!');
+  }catch(e){ console.warn('Realtime erro:', e); }
+}
+
+function handleRealtimeUpdate(payload){
+  var row = payload.new || payload.old;
+  if(!row) return;
+  try{
+    var r = JSON.parse(row.conteudo);
+    r.proto = row.proto;
+    r.status = row.status;
+    if(row.status === 'rascunho'){
+      // Atualiza badge de rascunho
+      S.hasDraft = true; updateDraftBadge();
+      showSyncStatus('Rascunho atualizado por ' + (r.resp || 'colega'));
+      setTimeout(hideSyncStatus, 3000);
+    } else {
+      // Atualiza hist\u00f3rico ao vivo
+      var idx = S.history.findIndex(function(h){ return h.proto === r.proto; });
+      if(idx >= 0) S.history[idx] = r;
+      else S.history.unshift(r);
+      renderDashRecent();
+      var histEl = document.getElementById('hist-list');
+      if(histEl && histEl.children.length > 0) renderHistory();
+      showSyncStatus('Novo relatorio recebido: ' + r.proto);
+      setTimeout(hideSyncStatus, 4000);
+    }
+  }catch(e){ console.warn('Realtime parse erro:', e); }
+}
+
+// \u2500\u2500 STATUS de sincroniza\u00e7\u00e3o \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function showSyncStatus(msg){
+  var el = document.getElementById('sync-status');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'sync-status';
+    el.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);background:rgba(21,101,192,.92);color:#fff;padding:8px 18px;border-radius:20px;font-size:.78rem;font-weight:600;z-index:9998;display:flex;align-items:center;gap:7px;box-shadow:0 3px 12px rgba(0,0,0,.2)';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<span style="animation:spin2 1s linear infinite;display:inline-block">&#9696;</span> ' + msg;
+  el.style.display = 'flex';
+  if(!document.getElementById('spin2-style')){
+    var s = document.createElement('style');
+    s.id = 'spin2-style';
+    s.textContent = '@keyframes spin2{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+}
+function hideSyncStatus(){
+  var el = document.getElementById('sync-status');
+  if(el) el.style.display = 'none';
+}
+
+// \u2500\u2500 HELPER local \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function saveHistoryLocal(report){
+  var idx = S.history.findIndex(function(h){ return h.proto === report.proto; });
+  if(idx >= 0) S.history[idx] = report;
+  else S.history.unshift(report);
+  try{localStorage.setItem('hist1', JSON.stringify(S.history));}catch(e){}
+  renderDashRecent();
+}
+
 
 function sa(t){
   if(!t)return '';var s=String(t);
@@ -906,7 +1185,74 @@ function init(){
   });
   setupPhotoInputs();
   pushHistory();
+  // Inicia sincronizacao Supabase
+  setTimeout(function(){
+    dbInit();
+    // Ap\u00f3s conectar, carrega historico remoto
+    setTimeout(function(){
+      if(DB_OK)dbLoadHistory();
+    },1200);
+  },500);
 }
+
+// \u2500\u2500 Config Supabase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function showSupaConfig(){
+  try{
+    var savedUrl=localStorage.getItem('supa_url');
+    var savedKey=localStorage.getItem('supa_key');
+    if(savedUrl)document.getElementById('supa-url').value=savedUrl;
+    if(savedKey)document.getElementById('supa-key').value=savedKey;
+  }catch(e){}
+  document.getElementById('supa-config-ov').classList.add('show');
+}
+function closeSupaConfig(){document.getElementById('supa-config-ov').classList.remove('show');}
+function saveSupaConfig(){
+  var url=document.getElementById('supa-url').value.trim();
+  var key=document.getElementById('supa-key').value.trim();
+  if(!url||!key){toast('Preencha URL e Chave!');return;}
+  try{
+    localStorage.setItem('supa_url',url);
+    localStorage.setItem('supa_key',key);
+    SUPA_URL=url; SUPA_KEY=key;
+    closeSupaConfig();
+    dbInit();
+    setTimeout(function(){dbLoadHistory();},800);
+    toast('Conectando ao Supabase...');
+    // Atualiza o banner
+    document.getElementById('collab-banner').style.display='flex';
+    var sl=document.getElementById('supa-status-label');
+    if(sl)sl.textContent='Conectado - sincronizando';
+  }catch(e){toast('Erro ao salvar config');}
+}
+function testSupaConnection(){
+  var url=document.getElementById('supa-url').value.trim();
+  var key=document.getElementById('supa-key').value.trim();
+  if(!url||!key){toast('Preencha URL e Chave!');return;}
+  var btn=document.getElementById('supa-test-btn');
+  btn.textContent='Testando...';btn.disabled=true;
+  try{
+    var cli=window.supabase.createClient(url,key);
+    cli.from('relatorios').select('count').limit(1).then(function(res){
+      btn.textContent='Testar Conexao';btn.disabled=false;
+      if(res.error){toast('Erro: '+res.error.message,false);}
+      else{toast('Conexao OK! Salve para ativar.');}
+    });
+  }catch(e){btn.textContent='Testar Conexao';btn.disabled=false;toast('Erro: '+e.message,false);}
+}
+
+// \u2500\u2500 Carrega config salva ao iniciar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+(function(){
+  try{
+    var su=localStorage.getItem('supa_url')||'https://viosfzgzljrlfsqjixog.supabase.co';
+    var sk=localStorage.getItem('supa_key')||'sb_publishable_W5HRKqABzXgbPi0dj-S-QQ_bOrk7G6h';
+    if(su&&sk&&su.indexOf('supabase.co')>0){
+      SUPA_URL=su;SUPA_KEY=sk;
+      // Pre-salva no localStorage para o modal mostrar correto
+      localStorage.setItem('supa_url',su);
+      localStorage.setItem('supa_key',sk);
+    }
+  }catch(e){}
+})();
 
 function updateDashDate(){
   var d=new Date();
@@ -1010,6 +1356,11 @@ function autosaveDraft(){
   document.querySelectorAll('#dev-list textarea').forEach(function(t){if(t.value.trim())d.devs.push(t.value);});
   document.querySelectorAll('#pend-list textarea').forEach(function(t){if(t.value.trim())d.pends.push(t.value);});
   try{localStorage.setItem(SK.draft,JSON.stringify(d));S.hasDraft=true;updateDraftBadge();}catch(e){}
+  // Sincroniza rascunho com equipe (debounced via setTimeout)
+  if(typeof dbSaveDraft === 'function'){
+    clearTimeout(S._draftTimer);
+    S._draftTimer = setTimeout(function(){dbSaveDraft(d);}, 3000);
+  }
 }
 
 function loadDraft(){
@@ -1476,13 +1827,19 @@ function sendReport(){
     dds:document.getElementById('f-dds').value||'',
     equip:document.getElementById('f-equip').value||'',
     acts:S.acts.slice(), abss:S.abss.slice(), devs:devs, pends:pends,
-    photoCount:S.photos.length,
+    photoCount:S.photos.length, status:'enviado',
     procs:Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;})
   };
-  S.history.unshift(report);
-  try{localStorage.setItem(SK.history,JSON.stringify(S.history));}catch(e){}
-  // Clear draft
-  try{localStorage.removeItem(SK.draft);}catch(e){}
+  // Salva localmente e no Supabase (compartilhado com equipe)
+  dbSaveReport(report);
+  // Limpa rascunho do Supabase tbm
+  if(DB_OK && supabase){
+    try{
+      var dp=null;try{dp=localStorage.getItem('draft_proto');}catch(e){}
+      if(dp)supabase.from('relatorios').delete().eq('proto',dp).then(function(){});
+    }catch(e){}
+  }
+  try{localStorage.removeItem(SK.draft);localStorage.removeItem('draft_proto');}catch(e){}
   S.hasDraft=false;S.inReport=false;updateDraftBadge();
   navTo('scr-succ');
 }
@@ -1491,6 +1848,11 @@ function sendReport(){
 function loadHistoryFromStorage(){
   try{var raw=localStorage.getItem(SK.history);if(raw)S.history=JSON.parse(raw);}catch(e){}
   renderDashRecent();
+}
+function loadHistoryAll(){
+  // Carrega local primeiro (imediato), depois sincroniza com Supabase
+  loadHistoryFromStorage();
+  if(typeof dbLoadHistory === 'function') dbLoadHistory();
 }
 
 function renderHistory(){
