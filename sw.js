@@ -1,5 +1,5 @@
-// v1778539589
-const CACHE='csn-1778539589';
+// v1778540478
+const CACHE='csn-1778540478';
 const BASE='/Relat-rios-T-cnico/';
 const ASSETS=[BASE,BASE+'index.html',BASE+'manifest.json',BASE+'icon-192.png',BASE+'icon-512.png',BASE+'lima-logo.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})));});
