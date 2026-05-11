@@ -1828,21 +1828,52 @@ async function generatePDFFromReport(r,photos){
   doc.setDrawColor(Cn.cyan[0],Cn.cyan[1],Cn.cyan[2]);doc.setLineWidth(0.4);
   doc.roundedRect(ML-1,MT-8,CW+2,hdrH,4,4,'S');
 
-  // Foto responsavel \u2014 canto esquerdo, quadrada com borda arredondada branca
+  // Foto responsavel: converte para circulo via canvas ANTES do jsPDF
   var sp=null;
   try{sp=localStorage.getItem('p-photo')||localStorage.getItem('rp1');}catch(e){}
-  var photoW=34, photoX=ML+3, photoY=MT-5;
+  var photoW=32, photoX=ML+4, photoY=MT-4;
+  var circularPhotoData=null;
   if(sp){
     try{
-      doc.addImage(sp,'JPEG',photoX,photoY,photoW,photoW);
-      doc.setDrawColor(255,255,255);doc.setLineWidth(0.8);
-      doc.roundedRect(photoX,photoY,photoW,photoW,4,4,'S');
-    }catch(e){sp=null;}
+      // Canvas com fundo navy (igual ao cabecalho) + clip circular
+      var tmpCanvas=document.createElement('canvas');
+      var sz=300;
+      tmpCanvas.width=sz;tmpCanvas.height=sz;
+      var tmpCtx=tmpCanvas.getContext('2d');
+      // PASSO 1: preenche fundo com a cor do cabecalho navy
+      tmpCtx.fillStyle='rgb(13,43,107)';
+      tmpCtx.fillRect(0,0,sz,sz);
+      // PASSO 2: carrega imagem
+      var tmpImg=new Image();
+      tmpImg.crossOrigin='anonymous';
+      await new Promise(function(resolve){tmpImg.onload=resolve;tmpImg.onerror=resolve;tmpImg.src=sp;});
+      // PASSO 3: clip circular
+      tmpCtx.save();
+      tmpCtx.beginPath();
+      tmpCtx.arc(sz/2,sz/2,sz/2-4,0,Math.PI*2,true);
+      tmpCtx.closePath();
+      tmpCtx.clip();
+      tmpCtx.drawImage(tmpImg,0,0,sz,sz);
+      tmpCtx.restore();
+      // PASSO 4: borda branca
+      tmpCtx.beginPath();
+      tmpCtx.arc(sz/2,sz/2,sz/2-4,0,Math.PI*2,true);
+      tmpCtx.strokeStyle='rgba(255,255,255,0.95)';
+      tmpCtx.lineWidth=8;
+      tmpCtx.stroke();
+      // PASSO 5: exporta como JPEG (sem transparencia) para jsPDF
+      circularPhotoData=tmpCanvas.toDataURL('image/jpeg',0.92);
+    }catch(e){circularPhotoData=null;}
+  }
+  if(circularPhotoData){
+    try{
+      doc.addImage(circularPhotoData,'JPEG',photoX,photoY,photoW,photoW);
+    }catch(e){circularPhotoData=null;}
   }
 
   // Titulos ao lado da foto (ou centralizados se sem foto)
-  var titleX = sp ? ML+photoW+8 : ML+4;
-  var titleW  = sp ? CW-photoW-10 : CW-8;
+  var titleX = circularPhotoData ? ML+photoW+8 : ML+4;
+  var titleW  = circularPhotoData ? CW-photoW-10 : CW-8;
   sF(15,Cn.white,true);
   var titleLines=doc.splitTextToSize('RELATORIO DE ATIVIDADES',titleW);
   doc.text(titleLines[0],titleX,MT+5);
