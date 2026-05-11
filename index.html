@@ -1875,22 +1875,22 @@ async function generatePDFFromReport(r,photos){
   rrfs(infoX,y,bW,bH,3,bg,border);
   sf(7,sub,true);doc.text('EMPRESA',infoX+10,y+6);
   sf(9,text,false);doc.text('CSN Mineracao',infoX+10,y+12.5);
-  sf(10,sub,false);doc.text('\u2302',infoX+3,y+10);
+  doc.setFillColor(sub[0],sub[1],sub[2]);doc.roundedRect(infoX+2,y+3,7,7,1,1,'F');doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(infoX+4,y+6,3,4,'F');
   // Equipe
   rrfs(infoX+bW+3,y,bW,bH,3,bg,border);
   sf(7,sub,true);doc.text('EQUIPE',infoX+bW+13,y+6);
   sf(9,text,false);doc.text('Automacao',infoX+bW+13,y+12.5);
-  sf(11,sub,false);doc.text('\u2699',infoX+bW+4,y+10);
+  doc.setFillColor(sub[0],sub[1],sub[2]);doc.circle(infoX+bW+7,y+7,3.5,'F');doc.setFillColor(bg[0],bg[1],bg[2]);doc.circle(infoX+bW+7,y+7,1.5,'F');
   // HH
   rrfs(infoX,y+bH+3,bW,bH,3,bg,border);
   sf(7,sub,true);doc.text('HH DISPONIVEL',infoX+10,y+bH+9);
   sf(9,text,false);doc.text(r.hh?sa(r.hh)+' horas':'--',infoX+10,y+bH+15.5);
-  sf(11,sub,false);doc.text('\u23f1',infoX+3,y+bH+13);
+  doc.setFillColor(sub[0],sub[1],sub[2]);doc.circle(infoX+6,y+bH+9,3.5,'F');doc.setFillColor(bg[0],bg[1],bg[2]);doc.circle(infoX+6,y+bH+9,2,'F');doc.setFillColor(sub[0],sub[1],sub[2]);doc.rect(infoX+5.8,y+bH+6.5,0.4,2.8,'F');
   // OM
   rrfs(infoX+bW+3,y+bH+3,bW,bH,3,bg,border);
   sf(7,sub,true);doc.text('ORDENS OM DO DIA',infoX+bW+10,y+bH+9);
   sf(9,text,false);doc.text(r.om?sa(r.om)+' ordens':'--',infoX+bW+10,y+bH+15.5);
-  sf(11,sub,false);doc.text('\u{1f4cb}',infoX+bW+3,y+bH+13);
+  doc.setFillColor(sub[0],sub[1],sub[2]);doc.roundedRect(infoX+bW+3,y+bH+5,7,8,1,1,'F');doc.setFillColor(bg[0],bg[1],bg[2]);doc.rect(infoX+bW+4.5,y+bH+7,4,1,'F');doc.rect(infoX+bW+4.5,y+bH+9,4,1,'F');doc.rect(infoX+bW+4.5,y+bH+11,3,1,'F');
 
   y+=cardH+6;
 
@@ -1898,14 +1898,14 @@ async function generatePDFFromReport(r,photos){
   var hw=(CW-4)/2;
   rrfs(ML,y,hw,22,3,white,border);
   // Icone pessoas
-  sf(11,blue,false);doc.text('\u{1f465}',ML+3,y+9);
+  doc.setFillColor(blue[0],blue[1],blue[2]);doc.circle(ML+5,y+4,2.5,'F');doc.circle(ML+9,y+4,2,'F');doc.ellipse(ML+5,y+9,3.5,2,'F');doc.ellipse(ML+9,y+9,3,2,'F');
   sf(7,blue,true);doc.text('SUPERVISORES / LIDER',ML+11,y+6);
   sf(8,text,false);doc.text('Supervisores: Rodrigo Lima / Rafael Gomes',ML+11,y+12);
   doc.text('Lider: Edson Jose',ML+11,y+18);
 
   if(r.dds){
     rrfs(ML+hw+4,y,hw,22,3,white,border);
-    sf(11,blue,false);doc.text('\u{1f4dd}',ML+hw+7,y+9);
+    doc.setFillColor(blue[0],blue[1],blue[2]);doc.roundedRect(ML+hw+7,y+2,8,10,1,1,'F');doc.setFillColor(white[0],white[1],white[2]);doc.rect(ML+hw+8.5,y+4.5,5,0.8,'F');doc.rect(ML+hw+8.5,y+6.5,5,0.8,'F');doc.rect(ML+hw+8.5,y+8.5,3.5,0.8,'F');
     sf(7,blue,true);doc.text('TEMA DO DDS',ML+hw+15,y+6);
     sf(8,text,false);
     var dl=doc.splitTextToSize(sa(r.dds),hw-20);
@@ -1918,7 +1918,7 @@ async function generatePDFFromReport(r,photos){
   rrfs(ML,y,CW,30,3,white,border);
   // Box azul icone
   rr(ML,y,14,30,3,navy);
-  sf(14,white,false);doc.text('\u{1f3af}',ML+3.5,y+17);
+  doc.setDrawColor(white[0],white[1],white[2]);doc.setLineWidth(0.7);doc.circle(ML+7,y+15,5,'S');doc.circle(ML+7,y+15,3,'S');doc.setFillColor(white[0],white[1],white[2]);doc.circle(ML+7,y+15,1.5,'F');
   sf(9,navy,true);doc.text('TIPO DE ATIVIDADE',ML+17,y+8);
   sf(7,sub,true);doc.text('CLASSIFICACAO',ML+17,y+14);
   sf(9,text,false);doc.text(sa(r.tipo||'--'),ML+17,y+20);
@@ -1941,7 +1941,7 @@ async function generatePDFFromReport(r,photos){
   chk(ausH+4);
   rrfs(ML,y,CW,ausH,3,white,border);
   rr(ML,y,14,ausH,3,navy);
-  sf(14,white,false);doc.text('\u{1f465}',ML+3.5,y+ausH/2+4);
+  var _ay=y+ausH/2;doc.setFillColor(white[0],white[1],white[2]);doc.circle(ML+5.5,_ay-1,2.5,'F');doc.circle(ML+9.5,_ay-1,2,'F');doc.ellipse(ML+5.5,_ay+4,3.5,2,'F');doc.ellipse(ML+9.5,_ay+4,3,2,'F');
   sf(9,navy,true);doc.text('AUSENCIAS DO DIA',ML+17,y+8);
   var ay=y+14;
   if(!r.abss||!r.abss.length){
@@ -1960,7 +1960,7 @@ async function generatePDFFromReport(r,photos){
   chk(18);
   rrfs(ML,y,CW,18,3,white,border);
   rr(ML,y,14,18,3,navy);
-  sf(12,white,false);doc.text('\u{1f4cb}',ML+3.5,y+12);
+  doc.setFillColor(white[0],white[1],white[2]);doc.roundedRect(ML+3,y+5,8,10,1,1,'F');doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(ML+4.5,y+7.5,5,0.8,'F');doc.rect(ML+4.5,y+9.5,5,0.8,'F');doc.rect(ML+4.5,y+11.5,4,0.8,'F');
   sf(9,navy,true);doc.text('ATIVIDADES REALIZADAS',ML+17,y+8);
   sf(8,sub,false);doc.text(sa(r.acts&&r.acts.length?r.acts.length+' atividade(s)':'0 atividades'),ML+17,y+14.5);
   y+=23;
@@ -2045,7 +2045,7 @@ async function generatePDFFromReport(r,photos){
           chk(14);
           rrfs(ML,y,secW,12,3,white,border);
           rr(ML,y,14,12,3,navy);
-          sf(10,white,false);doc.text('\u26a0',ML+4.5,y+9);
+          doc.setFillColor(white[0],white[1],white[2]);doc.triangle(ML+7,y+2,ML+2.5,y+10,ML+11.5,y+10,'F');doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(ML+6.6,y+4.5,0.8,3,'F');doc.rect(ML+6.6,y+8,0.8,1,'F');
           sf(8,navy,true);doc.text('ATIVIDADES NAO REALIZADAS / DESVIOS',ML+17,y+8);
           y+=15;
           r.devs.forEach(function(d,di){
@@ -2067,7 +2067,7 @@ async function generatePDFFromReport(r,photos){
           chk(14);
           rrfs(pendX2,y,secW,12,3,white,border);
           rr(pendX2,y,14,12,3,navy);
-          sf(10,white,false);doc.text('\u{1f4cb}',pendX2+4,y+9);
+          doc.setFillColor(white[0],white[1],white[2]);doc.roundedRect(pendX2+3,y+2,8,10,1,1,'F');doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(pendX2+4.5,y+4.5,5,0.8,'F');doc.rect(pendX2+4.5,y+6.5,5,0.8,'F');doc.rect(pendX2+4.5,y+8.5,4,0.8,'F');
           sf(8,navy,true);doc.text('PENDENCIAS ENCONTRADAS',pendX2+17,y+8);
           y+=15;
           r.pends.forEach(function(p,pi){
