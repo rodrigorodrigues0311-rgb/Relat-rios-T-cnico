@@ -903,6 +903,10 @@ function dbInit(){
       if(cb)cb.style.display='flex';
       var sl=document.getElementById('supa-status-label');
       if(sl)sl.textContent='Conectado - sincronizando em tempo real';
+      // Polling de rascunho a cada 10s (backup do realtime)
+      setInterval(function(){
+        if(DB_OK && !S.inReport) dbLoadHistory();
+      }, 10000);
     } else {
       console.warn('Supabase nao configurado - usando localStorage apenas');
     }
@@ -946,7 +950,7 @@ async function dbSaveReport(report){
 }
 
 // \u2500\u2500 SALVAR rascunho compartilhado \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-async function dbSaveDraft(draft){
+async async function dbSaveDraft(draft){
   if(!DB_OK){ 
     try{localStorage.setItem('draft1', JSON.stringify(draft));}catch(e){}
     S.hasDraft = true; updateDraftBadge();
@@ -955,12 +959,13 @@ async function dbSaveDraft(draft){
   try{
     draft.status = 'rascunho';
     draft.proto = draft.proto || 'RASCUNHO-' + Date.now();
+    draft._ts = Date.now(); // timestamp para comparar versoes
     var payload = {
       proto: draft.proto,
       data: draft.data || draft.date || '',
       tipo: draft.tipo || '',
-      resp: draft.resp || '',
-      cargo: '',
+      resp: draft.resp || (localStorage.getItem('rn1')||''),
+      cargo: draft.cargo || (localStorage.getItem('rc1')||''),
       status: 'rascunho',
       conteudo: JSON.stringify(draft),
       criado_em: new Date().toISOString()
@@ -1000,12 +1005,22 @@ async function dbLoadHistory(){
       }catch(e){ return {proto:row.proto, date:row.data, tipo:row.tipo, resp:row.resp, acts:[], status:row.status, abss:[], devs:[], pends:[], photoCount:0}; }
     });
     // Separa rascunho do hist\u00f3rico
-    var draft = S.history.find(function(r){ return r.status === 'rascunho'; });
+    var drafts = S.history.filter(function(r){ return r.status === 'rascunho'; });
     S.history = S.history.filter(function(r){ return r.status !== 'rascunho'; });
-    if(draft){
+    if(drafts.length > 0){
+      // Usa o rascunho mais recente (de qualquer membro da equipe)
+      var draft = drafts[0];
       S.hasDraft = true;
-      try{localStorage.setItem('draft1', JSON.stringify(draft));localStorage.setItem('draft_proto', draft.proto);}catch(e){}
+      try{
+        localStorage.setItem('draft1', JSON.stringify(draft));
+        localStorage.setItem('draft_proto', draft.proto);
+      }catch(e){}
       updateDraftBadge();
+      // Notifica que h\u00e1 rascunho da equipe dispon\u00edvel
+      if(draft.resp && draft.resp !== (localStorage.getItem('rn1')||'')){
+        showSyncStatus('Rascunho de ' + draft.resp + ' disponivel em "Em Andamento"');
+        setTimeout(hideSyncStatus, 5000);
+      }
     }
     renderDashRecent();
     renderHistory();
@@ -1326,9 +1341,41 @@ function startReport(){
   goStep(1);
 }
 
-function resumeDraft(){
+async async function resumeDraft(){
+  // Busca primeiro no Supabase (rascunho compartilhado da equipe)
+  if(DB_OK && supabase){
+    try{
+      showSyncStatus('Buscando rascunho da equipe...');
+      var res = await supabase
+        .from('relatorios')
+        .select('*')
+        .eq('status','rascunho')
+        .order('criado_em',{ascending:false})
+        .limit(1);
+      hideSyncStatus();
+      if(res.data && res.data.length > 0){
+        var remoteD = JSON.parse(res.data[0].conteudo);
+        remoteD.proto = res.data[0].proto;
+        // Compara com local - usa o mais recente
+        var localRaw=null;try{localRaw=localStorage.getItem(SK.draft);}catch(e){}
+        var localD=localRaw?JSON.parse(localRaw):null;
+        var d = remoteD; // prefere o remoto (equipe)
+        if(localD && localD._ts && remoteD._ts && localD._ts > remoteD._ts) d = localD;
+        applyDraft(d);
+        return;
+      }
+    }catch(e){
+      hideSyncStatus();
+      console.warn('Erro ao buscar rascunho remoto:',e);
+    }
+  }
+  // Fallback: localStorage local
   var d=null;try{var raw=localStorage.getItem(SK.draft);if(raw)d=JSON.parse(raw);}catch(e){}
-  if(!d){toast('Nenhum rascunho salvo');return;}
+  if(!d){toast('Nenhum rascunho da equipe encontrado');return;}
+  applyDraft(d);
+}
+
+function applyDraft(d){
   S.acts=d.acts||[];S.photos=d.photos||[];S.abss=d.abss||[];
   S.devs=d.devs||[];S.pends=d.pends||[];S.tipo=d.tipo||'';S.typeKey=d.typeKey||'';
   if(document.getElementById('f-data')&&d.data)document.getElementById('f-data').value=d.data;
@@ -1359,7 +1406,7 @@ function autosaveDraft(){
   // Sincroniza rascunho com equipe (debounced via setTimeout)
   if(typeof dbSaveDraft === 'function'){
     clearTimeout(S._draftTimer);
-    S._draftTimer = setTimeout(function(){dbSaveDraft(d);}, 3000);
+    S._draftTimer = setTimeout(function(){dbSaveDraft(d);}, 800);
   }
 }
 
@@ -1380,11 +1427,35 @@ function confirmBack(){
 }
 
 function saveDraftAndExit(){
+  // Salva localmente primeiro
   autosaveDraft();
   document.getElementById('back-ov').classList.remove('show');
   S.inReport=false;
+  // Cancela o debounce e salva IMEDIATAMENTE no Supabase
+  clearTimeout(S._draftTimer);
+  // Monta rascunho completo com resp
+  var d={
+    step:S.step,acts:S.acts,photos:S.photos,abss:S.abss,devs:[],pends:[],
+    tipo:S.tipo,typeKey:S.typeKey,status:'rascunho',
+    resp:document.getElementById('f-resp')?document.getElementById('f-resp').value:'',
+    cargo:document.getElementById('f-cargo')?document.getElementById('f-cargo').value:'',
+    data:document.getElementById('f-data')?document.getElementById('f-data').value:'',
+    hh:document.getElementById('f-hh')?document.getElementById('f-hh').value:'',
+    om:document.getElementById('f-om')?document.getElementById('f-om').value:'',
+    dds:document.getElementById('f-dds')?document.getElementById('f-dds').value:'',
+    equip:document.getElementById('f-equip')?document.getElementById('f-equip').value:''
+  };
+  document.querySelectorAll('#dev-list textarea').forEach(function(t){if(t.value.trim())d.devs.push(t.value);});
+  document.querySelectorAll('#pend-list textarea').forEach(function(t){if(t.value.trim())d.pends.push(t.value);});
+  showSyncStatus('Salvando rascunho para a equipe...');
+  dbSaveDraft(d).then(function(){
+    hideSyncStatus();
+    toast('Rascunho salvo e compartilhado com a equipe!');
+  }).catch(function(){
+    hideSyncStatus();
+    toast('Rascunho salvo localmente!');
+  });
   navTo('scr-dash');
-  toast('Rascunho salvo!');
 }
 
 function discardAndExit(){
