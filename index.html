@@ -1153,16 +1153,32 @@ document.getElementById('binst').addEventListener('click',function(){if(!PE){toa
 
 // SPLASH
 window.addEventListener('load',function(){
+  // Garante que a splash SEMPRE fecha mesmo com erro
+  var splashTimeout = setTimeout(function(){
+    var sp=document.getElementById('splash');
+    if(sp){sp.style.display='none';}
+    var app=document.getElementById('app');
+    if(app){app.style.display='flex';app.classList.add('visible');}
+  }, 5000); // fallback de 5 segundos
   setTimeout(function(){
     var sp=document.getElementById('splash');
     sp.classList.add('hide');
     setTimeout(function(){
+      clearTimeout(splashTimeout);
       sp.style.display='none';
       document.getElementById('app').classList.add('visible');
       SOK=true;
       var sk=null;try{sk=localStorage.getItem('ps');}catch(e){}
       if(!sk||Date.now()-Number(sk)>86400000)showIC();
-      init();
+      try{
+        init();
+      }catch(err){
+        console.error('Erro no init():', err);
+        // Tenta iniciar funcoes basicas mesmo com erro
+        try{loadProfile();}catch(e){}
+        try{loadHistoryFromStorage();renderDashRecent();}catch(e){}
+        try{updateDashDate();}catch(e){}
+      }
     },700);
   },2600);
 });
@@ -2147,7 +2163,7 @@ document.getElementById('wcp').addEventListener('click',function(){
 ['wcl','wcl2'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',function(){document.getElementById('wmod').classList.remove('show');});});
 
 // PDF
-async function makePDF(){
+async async function makePDF(){
   var dv=document.getElementById('f-data').value;
   var df=dv?dv.split('-').reverse().join('/'):'--';
   var r={
