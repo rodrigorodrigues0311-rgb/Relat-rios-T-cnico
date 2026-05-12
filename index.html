@@ -1526,27 +1526,50 @@ document.getElementById('wcp').addEventListener('click',function(){
 
 // \u2500\u2500 SUPABASE (opcional - nao trava o app se falhar) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var SUPA_URL='https://viosfzgzljrlfsqjixog.supabase.co';
-var SUPA_KEY='sb_publishable_W5HRKqABzXgbPi0dj-S-QQ_bOrk7G6h';
+var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpb3Nmemd6bGpybGZzcWppeG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MzA0NTEsImV4cCI6MjA5NDEwNjQ1MX0.rpm2erBikpAtkz-aQYCW_IXKGmEOoHPs-_jXQxo6gNA';
 var supabase=null,DB_OK=false;
 
 function dbInit(){
   try{
     if(typeof window.supabase==='undefined')return;
+    // Tenta carregar chave salva pelo usuario
+    try{
+      var su=localStorage.getItem('supa_url');
+      var sk=localStorage.getItem('supa_key');
+      if(su&&sk&&su.indexOf('supabase.co')>0){SUPA_URL=su;SUPA_KEY=sk;}
+    }catch(e){}
     if(!SUPA_URL||!SUPA_KEY||SUPA_KEY.length<10)return;
     supabase=window.supabase.createClient(SUPA_URL,SUPA_KEY,{
       auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false},
       global:{headers:{'apikey':SUPA_KEY}}
     });
-    DB_OK=true;
-    var cb=document.getElementById('collab-banner');if(cb)cb.style.display='flex';
-    // Realtime
-    supabase.channel('rls').on('postgres_changes',{event:'*',schema:'public',table:'relatorios'},function(p){
-      var row=p.new||{};
-      if(row.status==='rascunho'){S.hasDraft=true;updateDraftBadge();}
-      else if(row.status==='enviado'){dbLoadHistory();}
-    }).subscribe();
-    // Polling leve
-    setInterval(function(){if(DB_OK&&!S.inReport)dbLoadHistory();},15000);
+    // Testa a conexao antes de marcar como OK
+    supabase.from('relatorios').select('count').limit(1).then(function(res){
+      if(res.error){
+        console.warn('Supabase erro de conexao:',res.error.message);
+        DB_OK=false;
+        return;
+      }
+      DB_OK=true;
+      var cb=document.getElementById('collab-banner');if(cb)cb.style.display='flex';
+      var sl=document.getElementById('supa-status-label');
+      if(sl)sl.textContent='Conectado - sincronizando em tempo real';
+      // Realtime
+      try{
+        supabase.channel('rls').on('postgres_changes',{event:'*',schema:'public',table:'relatorios'},function(p){
+          var row=p.new||{};
+          if(row.status==='rascunho'){S.hasDraft=true;updateDraftBadge();}
+          else if(row.status==='enviado'){dbLoadHistory();}
+        }).subscribe();
+      }catch(e){}
+      // Polling leve
+      setInterval(function(){if(DB_OK&&!S.inReport)dbLoadHistory();},15000);
+      // Carrega historico
+      setTimeout(dbLoadHistory,500);
+    }).catch(function(e){
+      console.warn('Supabase teste falhou:',e);
+      DB_OK=false;
+    });
   }catch(e){console.warn('Supabase init:',e.message);}
 }
 
@@ -1577,7 +1600,14 @@ async function dbSaveDraft(d){
 }
 
 async function dbFetchDraft(){
-  if(!DB_OK){toast('Sem conexao com equipe');return;}
+  if(!DB_OK){
+    // Tenta buscar rascunho local
+    var d=null;
+    try{var raw=localStorage.getItem(SK.draft);if(raw)d=JSON.parse(raw);}catch(e){}
+    if(d){applyDraft(d);return;}
+    toast('Configure a conexao no Perfil para compartilhar com equipe');
+    return;
+  }
   try{
     var res=await supabase.from('relatorios').select('*').eq('status','rascunho').order('criado_em',{ascending:false}).limit(1);
     if(res.data&&res.data.length>0){
@@ -1627,8 +1657,13 @@ function saveSupaConfig(){
   var url=document.getElementById('supa-url').value.trim();
   var key=document.getElementById('supa-key').value.trim();
   if(!url||!key){toast('Preencha URL e Chave!');return;}
+  if(key.indexOf('service_role')>=0){
+    toast('Use a chave ANON, nao a service_role!');return;
+  }
   try{localStorage.setItem('supa_url',url);localStorage.setItem('supa_key',key);SUPA_URL=url;SUPA_KEY=key;}catch(e){}
-  closeSupaConfig();dbInit();toast('Conectando...');
+  closeSupaConfig();
+  toast('Conectando...');
+  setTimeout(function(){dbInit();},300);
 }
 function testSupaConnection(){
   var url=document.getElementById('supa-url').value.trim();
