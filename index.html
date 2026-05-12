@@ -936,10 +936,10 @@ window.addEventListener('load',function(){
 window.addEventListener('popstate',function(){
   var cur=document.querySelector('.screen.active');
   if(!cur||cur.id==='scr-dash')return;
-  if(S.inReport){confirmBack();history.pushState({},,'');}
+  if(S.inReport){confirmBack();history.pushState({},'','');}
   else navTo('scr-dash');
 });
-function _ph(){try{history.pushState({},,'');}catch(e){}}
+function _ph(){try{history.pushState({},'','');}catch(e){}}
 
 // INIT
 function init(){
