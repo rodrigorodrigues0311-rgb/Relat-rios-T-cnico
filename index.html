@@ -35,7 +35,7 @@
 html,body{height:100%;background:#0D2B6B;font-family:var(--font);font-size:15px;color:var(--g900);overflow:hidden}
 
 /* SPLASH */
-#splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0D2B6B 0%,#1565C0 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s}
+#splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0D2B6B 0%,#1565C0 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .6s;transition:opacity .5s ease}
 #splash.hide{opacity:0;pointer-events:none}
 .spl-logo{width:100px;height:100px;border-radius:22px;overflow:hidden;border:3px solid rgba(255,255,255,.3);box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .spl-logo img{width:100%;height:100%;object-fit:cover}
@@ -1063,8 +1063,21 @@ window.addEventListener('load',function(){
     SPLASH_DONE=true;
     var sp=document.getElementById('splash');
     var app=document.getElementById('app');
-    if(sp){sp.classList.add('hide');setTimeout(function(){sp.style.display='none';},700);}
-    if(app){app.classList.add('visible');}
+    // For\u00e7a fechamento imediato da splash
+    if(sp){
+      sp.style.opacity='0';
+      sp.style.transition='opacity 0.4s';
+      setTimeout(function(){
+        sp.style.display='none';
+        sp.style.visibility='hidden';
+      },450);
+    }
+    // For\u00e7a abertura do app
+    if(app){
+      app.style.display='flex';
+      app.style.flexDirection='column';
+      app.classList.add('visible');
+    }
     SOK=true;
     try{init();}catch(err){
       console.error('init erro:',err);
@@ -1074,9 +1087,9 @@ window.addEventListener('load',function(){
     setTimeout(function(){try{dbInit();setTimeout(dbLoadHistory,1200);}catch(e){}},500);
   }
   // Abre em 2.5s ou quando a pagina carregar, o que vier primeiro
-  setTimeout(openApp, 2500);
+  setTimeout(openApp, 1500);
   // Failsafe: for\u00e7a abertura em 5s
-  setTimeout(openApp, 5000);
+  setTimeout(openApp, 4000);
 });
 
 // \u2500\u2500 STATE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
