@@ -1,5 +1,5 @@
-// v1778551992
-const CACHE='csn-1778551992';
+// v1778579439
+const CACHE='csn-1778579439';
 self.addEventListener('install',function(e){self.skipWaiting();});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k);}));}).then(function(){return self.clients.claim();}));});
 self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return new Response('',{status:408})}));});

@@ -1546,25 +1546,53 @@ var FB_POLL = null;
 
 // Inicializa e testa Firebase
 function fbInit(){
-  // Testa conexao
-  fetch(FB_URL + '/ping.json', {method:'PUT', body:JSON.stringify({t:Date.now()})})
-    .then(function(r){ return r.json(); })
-    .then(function(){
+  console.log('Iniciando Firebase...', FB_URL);
+  // Testa com GET simples primeiro (mais confiavel)
+  fetch(FB_URL + '/.json?shallow=true')
+    .then(function(r){
+      console.log('Firebase resposta status:', r.status);
+      if(!r.ok) throw new Error('Status ' + r.status);
+      return r.json();
+    })
+    .then(function(data){
+      console.log('Firebase OK! Dados:', JSON.stringify(data).substring(0,50));
       FB_OK = true;
-      // Mostra banner colaborativo
       var cb = document.getElementById('collab-banner');
       if(cb) cb.style.display = 'flex';
       var sl = document.getElementById('supa-status-label');
-      if(sl) sl.textContent = 'Conectado via Firebase - tempo real';
-      // Inicia polling para detectar rascunhos e historico novo
+      if(sl) sl.textContent = 'Conectado via Firebase';
       fbStartPolling();
-      // Carrega historico remoto
       fbLoadHistory();
-      console.log('Firebase conectado!');
+      toast('Firebase conectado!');
     })
     .catch(function(e){
-      console.warn('Firebase erro:', e.message);
-      FB_OK = false;
+      console.warn('Firebase GET falhou:', e.message||e);
+      // Tenta PUT como fallback
+      fetch(FB_URL + '/ping.json', {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({t: Date.now()})
+      })
+      .then(function(r){
+        console.log('Firebase PUT status:', r.status);
+        if(!r.ok) throw new Error('Status ' + r.status);
+        return r.json();
+      })
+      .then(function(){
+        FB_OK = true;
+        var cb = document.getElementById('collab-banner');
+        if(cb) cb.style.display = 'flex';
+        var sl = document.getElementById('supa-status-label');
+        if(sl) sl.textContent = 'Conectado via Firebase';
+        fbStartPolling();
+        fbLoadHistory();
+        toast('Firebase conectado!');
+      })
+      .catch(function(e2){
+        console.warn('Firebase PUT falhou:', e2.message||e2);
+        FB_OK = false;
+        toast('Firebase: erro de conexao - ' + (e2.message||'verifique internet'));
+      });
     });
 }
 
