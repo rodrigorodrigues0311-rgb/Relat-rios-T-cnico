@@ -1267,9 +1267,12 @@ function autosaveDraft(){
   document.querySelectorAll('#dev-list textarea').forEach(function(t){if(t.value.trim())d.devs.push(t.value);});
   document.querySelectorAll('#pend-list textarea').forEach(function(t){if(t.value.trim())d.pends.push(t.value);});
   try{localStorage.setItem(SK.draft,JSON.stringify(d));S.hasDraft=true;updateDraftBadge();}catch(e){}
-  // Supabase sync (seguro - nao trava o app)
+  // Firebase sync (nao trava o app)
   clearTimeout(S._dt);
-  S._dt=setTimeout(function(){try{if(typeof dbSaveDraft==='function')dbSaveDraft(d);}catch(e){}},2000);
+  S._dt=setTimeout(function(){
+    try{if(typeof fbSaveDraft==='function'&&FB_OK)fbSaveDraft(d);}catch(e){}
+    try{if(typeof dbSaveDraft==='function'&&DB_OK)dbSaveDraft(d);}catch(e){}
+  },1500);
 }
 
 function loadDraft(){
@@ -1281,8 +1284,11 @@ function updateDraftBadge(){
 }
 
 function resumeDraft(){
-  // Sempre tenta buscar do Supabase (tem rascunho de outro colega)
-  // ou usa local se offline
+  // Firebase tem prioridade (sem restri\u00e7\u00e3o CORS)
+  if(typeof fbFetchDraft==='function'){
+    fbFetchDraft();
+    return;
+  }
   if(typeof dbFetchDraft==='function'){
     dbFetchDraft();
     return;
@@ -1371,10 +1377,13 @@ function sendReport(){
   // Salva local
   S.history.unshift(report);
   try{localStorage.setItem(SK.history,JSON.stringify(S.history));}catch(e){}
-  // Supabase (nao bloqueia)
-  try{if(typeof dbSaveReport==='function')dbSaveReport(report);}catch(e){}
-  // Limpa rascunho
+  // Firebase (sem CORS)
+  try{if(typeof fbSaveReport==='function'&&FB_OK)fbSaveReport(report);}catch(e){}
+  // Supabase (fallback)
+  try{if(typeof dbSaveReport==='function'&&DB_OK)dbSaveReport(report);}catch(e){}
+  // Limpa rascunho local e remoto
   try{localStorage.removeItem(SK.draft);}catch(e){}
+  try{if(typeof fbClearDraft==='function'&&FB_OK)fbClearDraft();}catch(e){}
   S.hasDraft=false;S.inReport=false;updateDraftBadge();
   navTo('scr-succ');
 }
@@ -1527,6 +1536,168 @@ document.getElementById('wcp').addEventListener('click',function(){
 
 
 // \u2500\u2500 SUPABASE (opcional - nao trava o app se falhar) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+// FIREBASE REALTIME DATABASE - Sincronizacao da Equipe
+// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+var FB_URL = 'https://csn-automacao-default-rtdb.firebaseio.com';
+var FB_OK = false;
+var FB_POLL = null;
+
+// Inicializa e testa Firebase
+function fbInit(){
+  // Testa conexao
+  fetch(FB_URL + '/ping.json', {method:'PUT', body:JSON.stringify({t:Date.now()})})
+    .then(function(r){ return r.json(); })
+    .then(function(){
+      FB_OK = true;
+      // Mostra banner colaborativo
+      var cb = document.getElementById('collab-banner');
+      if(cb) cb.style.display = 'flex';
+      var sl = document.getElementById('supa-status-label');
+      if(sl) sl.textContent = 'Conectado via Firebase - tempo real';
+      // Inicia polling para detectar rascunhos e historico novo
+      fbStartPolling();
+      // Carrega historico remoto
+      fbLoadHistory();
+      console.log('Firebase conectado!');
+    })
+    .catch(function(e){
+      console.warn('Firebase erro:', e.message);
+      FB_OK = false;
+    });
+}
+
+// Salva relatorio enviado no Firebase
+function fbSaveReport(report){
+  if(!FB_OK) return;
+  var key = report.proto.replace(/[^a-zA-Z0-9_-]/g,'_');
+  fetch(FB_URL + '/relatorios/' + key + '.json', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(report)
+  }).catch(function(e){ console.warn('fbSaveReport:', e.message); });
+}
+
+// Salva rascunho no Firebase (sobrescreve sempre o mesmo node)
+function fbSaveDraft(draft){
+  if(!FB_OK) return;
+  draft._ts = Date.now();
+  draft.resp = draft.resp || localStorage.getItem('rn1') || '';
+  fetch(FB_URL + '/rascunho.json', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(draft)
+  })
+  .then(function(){
+    console.log('Rascunho salvo no Firebase!');
+  })
+  .catch(function(e){ console.warn('fbSaveDraft:', e.message); });
+}
+
+// Busca rascunho do Firebase
+async function fbFetchDraft(){
+  if(!FB_OK){
+    // Aguarda ate 4 segundos
+    var w = 0;
+    while(!FB_OK && w < 4000){
+      await new Promise(function(r){setTimeout(r,400);});
+      w += 400;
+    }
+  }
+  if(!FB_OK){
+    // Tenta local
+    var d = null;
+    try{var raw=localStorage.getItem(SK.draft);if(raw)d=JSON.parse(raw);}catch(e){}
+    if(d){applyDraft(d);toast('Rascunho local carregado');return;}
+    toast('Sem conexao com a equipe');
+    return;
+  }
+  try{
+    var r = await fetch(FB_URL + '/rascunho.json');
+    var data = await r.json();
+    if(data && data.step){
+      applyDraft(data);
+      toast('Rascunho da equipe carregado!');
+    } else {
+      // Tenta local
+      var raw = null;
+      try{raw=localStorage.getItem(SK.draft);}catch(e){}
+      if(raw){applyDraft(JSON.parse(raw));toast('Rascunho local carregado');}
+      else toast('Nenhum rascunho da equipe encontrado');
+    }
+  }catch(e){
+    console.warn('fbFetchDraft:', e.message);
+    toast('Erro ao buscar rascunho');
+  }
+}
+
+// Carrega historico do Firebase
+async function fbLoadHistory(){
+  if(!FB_OK) return;
+  try{
+    var r = await fetch(FB_URL + '/relatorios.json');
+    var data = await r.json();
+    if(data && typeof data === 'object'){
+      var hist = Object.values(data).filter(function(r){return r && r.proto;});
+      // Ordena por data mais recente
+      hist.sort(function(a,b){return (b.proto||'').localeCompare(a.proto||'');});
+      if(hist.length > 0){
+        S.history = hist;
+        try{localStorage.setItem(SK.history, JSON.stringify(hist));}catch(e){}
+        renderDashRecent();
+        var histEl = document.getElementById('hist-list');
+        if(histEl && histEl.innerHTML !== '') renderHistory();
+      }
+    }
+  }catch(e){
+    console.warn('fbLoadHistory:', e.message);
+  }
+}
+
+// Remove rascunho do Firebase (apos enviar)
+function fbClearDraft(){
+  if(!FB_OK) return;
+  fetch(FB_URL + '/rascunho.json', {method:'DELETE'})
+    .catch(function(e){ console.warn('fbClearDraft:', e.message); });
+}
+
+// Polling \u2014 verifica rascunhos e historico a cada 8 segundos
+function fbStartPolling(){
+  if(FB_POLL) clearInterval(FB_POLL);
+  var lastRascunhoTs = 0;
+  FB_POLL = setInterval(function(){
+    if(!FB_OK || S.inReport) return;
+    // Verifica rascunho
+    fetch(FB_URL + '/rascunho.json')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data && data._ts && data._ts !== lastRascunhoTs){
+          lastRascunhoTs = data._ts;
+          var minhaResp = localStorage.getItem('rn1') || '';
+          // Notifica se o rascunho e de outra pessoa
+          if(data.resp && data.resp !== minhaResp){
+            S.hasDraft = true;
+            updateDraftBadge();
+            toast('Rascunho de ' + data.resp + ' disponivel!');
+          } else if(data.resp){
+            S.hasDraft = true;
+            updateDraftBadge();
+          }
+        } else if(!data || data === null){
+          // Sem rascunho remoto - verifica local
+          var local = null;
+          try{var r2=localStorage.getItem(SK.draft);if(r2)local=JSON.parse(r2);}catch(e){}
+          if(!local && S.hasDraft){S.hasDraft=false;updateDraftBadge();}
+        }
+      })
+      .catch(function(){});
+    // Verifica historico novo
+    fbLoadHistory();
+  }, 8000);
+}
+
+
 var SUPA_URL='https://viosfzgzljrlfsqjixog.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpb3Nmemd6bGpybGZzcWppeG9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MzA0NTEsImV4cCI6MjA5NDEwNjQ1MX0.rpm2erBikpAtkz-aQYCW_IXKGmEOoHPs-_jXQxo6gNA';
 var supabase=null,DB_OK=false;
