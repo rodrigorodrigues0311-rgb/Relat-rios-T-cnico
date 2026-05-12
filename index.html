@@ -1281,13 +1281,15 @@ function updateDraftBadge(){
 }
 
 function resumeDraft(){
+  // Sempre tenta buscar do Supabase (tem rascunho de outro colega)
+  // ou usa local se offline
+  if(typeof dbFetchDraft==='function'){
+    dbFetchDraft();
+    return;
+  }
   var d=null;
   try{var raw=localStorage.getItem(SK.draft);if(raw)d=JSON.parse(raw);}catch(e){}
-  if(!d){
-    // Tenta buscar do Supabase
-    if(typeof dbFetchDraft==='function'){dbFetchDraft();return;}
-    toast('Nenhum rascunho salvo');return;
-  }
+  if(!d){toast('Nenhum rascunho salvo');return;}
   applyDraft(d);
 }
 
@@ -1551,6 +1553,7 @@ function dbInit(){
         return;
       }
       DB_OK=true;
+      try{localStorage.setItem('db_connected','1');}catch(e){}
       var cb=document.getElementById('collab-banner');if(cb)cb.style.display='flex';
       var sl=document.getElementById('supa-status-label');
       if(sl)sl.textContent='Conectado - sincronizando em tempo real';
@@ -1600,12 +1603,20 @@ async function dbSaveDraft(d){
 }
 
 async function dbFetchDraft(){
+  // Se DB nao conectou ainda, aguarda ate 3 segundos
   if(!DB_OK){
-    // Tenta buscar rascunho local
+    var waited=0;
+    while(!DB_OK && waited<3000){
+      await new Promise(function(r){setTimeout(r,300);});
+      waited+=300;
+    }
+  }
+  if(!DB_OK){
+    // Fallback: tenta rascunho local
     var d=null;
     try{var raw=localStorage.getItem(SK.draft);if(raw)d=JSON.parse(raw);}catch(e){}
-    if(d){applyDraft(d);return;}
-    toast('Configure a conexao no Perfil para compartilhar com equipe');
+    if(d){applyDraft(d);toast('Rascunho local carregado');return;}
+    toast('Aguarde a conexao ou verifique sua internet');
     return;
   }
   try{
