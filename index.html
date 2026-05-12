@@ -1547,6 +1547,7 @@ var FB_POLL = null;
 // Inicializa e testa Firebase
 function fbInit(){
   console.log('Iniciando Firebase...', FB_URL);
+  toast('Testando Firebase...');
   // Testa com GET simples primeiro (mais confiavel)
   fetch(FB_URL + '/.json?shallow=true')
     .then(function(r){
@@ -1567,6 +1568,7 @@ function fbInit(){
     })
     .catch(function(e){
       console.warn('Firebase GET falhou:', e.message||e);
+      toast('GET falhou: ' + (e.message||'').substring(0,30) + ' - tentando PUT...');
       // Tenta PUT como fallback
       fetch(FB_URL + '/ping.json', {
         method: 'PUT',
@@ -1591,7 +1593,9 @@ function fbInit(){
       .catch(function(e2){
         console.warn('Firebase PUT falhou:', e2.message||e2);
         FB_OK = false;
-        toast('Firebase: erro de conexao - ' + (e2.message||'verifique internet'));
+        // Mostra erro detalhado
+        var msg = e2.message || String(e2) || 'erro desconhecido';
+        toast('Firebase falhou: ' + msg.substring(0,50));
       });
     });
 }
