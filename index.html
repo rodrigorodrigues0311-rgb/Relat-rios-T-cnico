@@ -540,7 +540,7 @@ select.fi option{background:#fff}
             <input type="text" class="fi" id="f-cargo" placeholder="Cargo / Funcao" style="margin:0">
           </div>
         </div>
-        <input type="file" id="rpinp" accept="image/*" style="display:none">
+        <input type="file" id="rpinp" accept="image/*" capture="user" style="display:none">
       </div>
       <div style="background:var(--blue-lt);border-radius:var(--r);padding:13px;margin-bottom:16px">
         <div style="font-size:.72rem;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Supervisores / Lider</div>
@@ -625,10 +625,11 @@ select.fi option{background:#fff}
     <div class="scroll padded">
       <p style="font-size:.85rem;color:var(--g500);margin-bottom:16px">Tire fotos ou anexe imagens das atividades:</p>
       <div class="ph-actions">
-        <button class="ph-btn" onclick="document.getElementById('ph-inp').click()"><span class="ph-btn-ico">&#128247;</span>Tirar Foto</button>
+        <button class="ph-btn" onclick="document.getElementById('ph-cam').click()"><span class="ph-btn-ico">&#128247;</span>Tirar Foto</button>
         <button class="ph-btn" onclick="document.getElementById('ph-inp').click()"><span class="ph-btn-ico">&#128206;</span>Anexar Foto</button>
       </div>
       <input type="file" id="ph-inp" accept="image/*" multiple style="display:none">
+      <input type="file" id="ph-cam" accept="image/*" capture="environment" multiple style="display:none">
       <div id="ph-cnt" class="ph-cnt" style="display:none"></div>
       <div class="ph-grid" id="ph-grid"></div>
     </div>
@@ -1005,6 +1006,7 @@ function init(){
   updateDashHeader();
   document.getElementById('f-data').value=new Date().toISOString().split('T')[0];
   buildAbsCollab();
+  // Galeria
   document.getElementById('ph-inp').addEventListener('change',function(){
     Array.from(this.files).forEach(function(f){
       var r=new FileReader();
@@ -1012,11 +1014,23 @@ function init(){
       r.readAsDataURL(f);
     });
   });
+  // Camera
+  var phCam=document.getElementById('ph-cam');
+  if(phCam){
+    phCam.addEventListener('change',function(){
+      Array.from(this.files).forEach(function(f){
+        var r=new FileReader();
+        r.onload=function(e){S.photos.push(e.target.result);renderPhotos();};
+        r.readAsDataURL(f);
+      });
+    });
+  }
   document.querySelectorAll('.proc-c input').forEach(function(cb){
     cb.addEventListener('change',function(){this.closest('.proc-c').classList.toggle('chk',this.checked);});
   });
   setupPhotoInputs();
   setTimeout(setupRealtimeSync,500);
+  setTimeout(function(){if(window._initPTR)window._initPTR();},1000);
   _ph();
   // Mostra banner colaborativo sempre
   var cb=document.getElementById('collab-banner');if(cb)cb.style.display='block';
@@ -2537,14 +2551,12 @@ async function generatePDFFromReport(r,photos){
     },800);
   }
 
-  // Adiciona listeners quando o app carregar
-  window.addEventListener('load',function(){
-    setTimeout(function(){
-      document.addEventListener('touchstart',onTouchStart,{passive:true});
-      document.addEventListener('touchmove',onTouchMove,{passive:false});
-      document.addEventListener('touchend',onTouchEnd,{passive:true});
-    },3000);
-  });
+  // Expoe funcao para ser chamada pelo init()
+  window._initPTR = function(){
+    document.addEventListener('touchstart',onTouchStart,{passive:true});
+    document.addEventListener('touchmove',onTouchMove,{passive:false});
+    document.addEventListener('touchend',onTouchEnd,{passive:true});
+  };
 })();
 
 
