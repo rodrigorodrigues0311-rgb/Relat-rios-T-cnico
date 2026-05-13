@@ -1375,10 +1375,12 @@ function sendReport(){
   var proto='RA-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'-'+String(S.history.length+1).padStart(3,'0');
   document.getElementById('proto-num').textContent=proto;
   var dv=document.getElementById('f-data').value,df=dv?dv.split('-').reverse().join('/'):'--';
+  // Horario do envio
+  var hora=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   var devs=Array.from(document.querySelectorAll('#dev-list textarea')).map(function(t){return t.value;}).filter(Boolean);
   var pends=Array.from(document.querySelectorAll('#pend-list textarea')).map(function(t){return t.value;}).filter(Boolean);
   var report={
-    proto:proto,date:df,tipo:S.tipo,status:'enviado',
+    proto:proto,date:df,hora:hora,tipo:S.tipo,status:'enviado',
     resp:document.getElementById('f-resp').value||'--',
     cargo:document.getElementById('f-cargo').value||'',
     hh:document.getElementById('f-hh').value||'',
@@ -1396,9 +1398,18 @@ function sendReport(){
   try{if(typeof fbSaveReport==='function'&&FB_OK)fbSaveReport(report);}catch(e){}
   // Supabase (fallback)
   try{if(typeof dbSaveReport==='function'&&DB_OK)dbSaveReport(report);}catch(e){}
-  // Limpa rascunho local e remoto
+  // Limpa rascunho local
   try{localStorage.removeItem(SK.draft);}catch(e){}
-  try{if(typeof fbClearDraft==='function'&&FB_OK)fbClearDraft();}catch(e){}
+  // Limpa rascunho do Firebase para TODOS verem
+  try{
+    if(typeof fbClearDraft==='function'&&FB_OK){
+      fbClearDraft();
+      // Notifica todos que o rascunho foi enviado
+      setTimeout(function(){
+        fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});
+      },500);
+    }
+  }catch(e){}
   S.hasDraft=false;S.inReport=false;updateDraftBadge();
   navTo('scr-succ');
 }
@@ -1417,9 +1428,10 @@ function renderHistory(){
   el.innerHTML='';
   S.history.forEach(function(r,i){
     var d=document.createElement('div');d.className='rpt-item';
+    var metaH=r.date+(r.hora?' \u00b7 '+r.hora:'')+'<span>&#183;</span>'+r.tipo;
     d.innerHTML='<div class="rpt-dot" style="background:'+(i<2?'#1565C0':'#43A047')+'"></div>'
-      +'<div class="rpt-info"><div class="rpt-meta">'+r.date+'<span>&#183;</span>'+r.tipo+'</div>'
-      +'<div class="rpt-title">'+(r.acts.length?sa(r.acts[0].desc).substring(0,45):'Relatorio '+r.proto)+'</div></div>'
+      +'<div class="rpt-info"><div class="rpt-meta">'+metaH+'</div>'
+      +'<div class="rpt-title">'+(r.acts&&r.acts.length?sa(r.acts[0].desc).substring(0,45):'Relatorio '+r.proto)+'</div></div>'
       +'<span class="badge">Enviado</span>';
     d.onclick=function(){showReportDetail(i);};el.appendChild(d);
   });
@@ -1431,9 +1443,10 @@ function renderDashRecent(){
   el.innerHTML='';
   S.history.slice(0,3).forEach(function(r,i){
     var d=document.createElement('div');d.className='rpt-item';
+    var metaStr=r.date+(r.hora?' '+r.hora:'')+'<span>&#183;</span>'+r.tipo;
     d.innerHTML='<div class="rpt-dot" style="background:'+(i===0?'#1565C0':'#43A047')+'"></div>'
-      +'<div class="rpt-info"><div class="rpt-meta">'+r.date+'<span>&#183;</span>'+r.tipo+'</div>'
-      +'<div class="rpt-title">'+(r.acts.length?sa(r.acts[0].desc).substring(0,40):'Relatorio '+r.proto)+'</div></div>'
+      +'<div class="rpt-info"><div class="rpt-meta">'+metaStr+'</div>'
+      +'<div class="rpt-title">'+(r.acts&&r.acts.length?sa(r.acts[0].desc).substring(0,40):'Relatorio '+r.proto)+'</div></div>'
       +'<span class="badge">Enviado</span>';
     d.onclick=function(){showReportDetail(i);};el.appendChild(d);
   });
@@ -1442,7 +1455,7 @@ function renderDashRecent(){
 function showReportDetail(idx){
   S.selectedReport=idx;var r=S.history[idx];if(!r)return;
   var html='<div class="hd-card"><div class="hd-card-title" style="color:var(--blue)">&#128203; Identificacao</div>';
-  [['Protocolo',r.proto],['Data',r.date],['Tipo',r.tipo],['Responsavel',r.resp+(r.cargo?' - '+r.cargo:'')],
+  [['Protocolo',r.proto],['Data',r.date+(r.hora?' - '+r.hora:'')],['Tipo',r.tipo],['Responsavel',r.resp+(r.cargo?' - '+r.cargo:'')],
    ['HH',r.hh?r.hh+' horas':''],['Ordens OM',r.om],['DDS',r.dds],['Equipamento',r.equip]
   ].forEach(function(kv){if(kv[1])html+='<div class="hd-row"><span class="hd-label">'+kv[0]+'</span><span class="hd-value">'+kv[1]+'</span></div>';});
   html+='</div>';
@@ -1758,10 +1771,12 @@ function fbStartPolling(){
             updateDraftBadge();
           }
         } else if(!data || data === null){
-          // Sem rascunho remoto - verifica local
-          var local = null;
-          try{var r2=localStorage.getItem(SK.draft);if(r2)local=JSON.parse(r2);}catch(e){}
-          if(!local && S.hasDraft){S.hasDraft=false;updateDraftBadge();}
+          // Rascunho foi deletado (relatorio enviado) - limpa para todos
+          if(S.hasDraft){
+            S.hasDraft=false;
+            updateDraftBadge();
+            try{localStorage.removeItem(SK.draft);}catch(e){}
+          }
         }
       })
       .catch(function(){});
