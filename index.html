@@ -2041,6 +2041,13 @@ function generateWPPFromReport(r){
 }
 
 function makeWPP(){
+  // Se estiver na tela de sucesso, usa o ultimo relatorio salvo
+  var succScreen=document.getElementById('scr-succ');
+  if(succScreen&&succScreen.classList.contains('active')&&S.history.length>0){
+    generateWPPFromReport(S.history[0]);
+    document.getElementById('wmod').classList.add('show');
+    return;
+  }
   var dv=document.getElementById('f-data').value;
   var df=dv?dv.split('-').reverse().join('/'):'--';
   var r={date:df,tipo:S.tipo,
@@ -2060,6 +2067,14 @@ function makeWPP(){
   document.getElementById('wmod').classList.add('show');
 }
 async function makePDF(){
+  // Se estiver na tela de sucesso, usa o ultimo relatorio salvo
+  var succScreen=document.getElementById('scr-succ');
+  if(succScreen&&succScreen.classList.contains('active')&&S.history.length>0){
+    var lastReport=S.history[0];
+    await generatePDFFromReport(lastReport, S.photos);
+    return;
+  }
+  // Senao usa os campos do formulario
   var dv=document.getElementById('f-data').value;
   var df=dv?dv.split('-').reverse().join('/'):'--';
   var r={date:df,tipo:S.tipo,
