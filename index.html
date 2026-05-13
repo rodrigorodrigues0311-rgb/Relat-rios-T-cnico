@@ -338,10 +338,25 @@ select.fi option{background:#fff}
 .prof-edit-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .prof-edit-lbl{font-size:.8rem;font-weight:600;color:var(--g700);width:90px;flex-shrink:0}
 .prof-edit-row .fi{margin:0;flex:1}
+
+/* ── PULL TO REFRESH ─────────────────────────────────────── */
+#ptr-indicator{
+  position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-60px);
+  z-index:9000;background:var(--blue);color:#fff;
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;box-shadow:0 4px 12px rgba(21,101,192,.4);
+  transition:transform .2s ease,opacity .2s;opacity:0;
+}
+#ptr-indicator.pulling{opacity:1;}
+#ptr-indicator.ready{background:var(--green2);}
+#ptr-indicator.loading{animation:ptr-spin .7s linear infinite;}
+@keyframes ptr-spin{to{transform:translateX(-50%) rotate(360deg) translateY(-0px);}}
 </style>
 </head>
 <body>
 <!-- SPLASH -->
+<div id="ptr-indicator">&#8595;</div>
 <div id="splash">
   <div class="spl-logo"><img src="lima-logo.png" alt="Lima Store"></div>
   <div class="spl-title">Relatorios de<br>Automacao</div>
@@ -2392,6 +2407,109 @@ async function generatePDFFromReport(r,photos){
       .catch(function(e){if(e.name!=='AbortError'){doc.save(fn);toast('PDF salvo!');}});
   }else{doc.save(fn);toast('PDF salvo!');}
 }
+
+// \u2500\u2500 PULL TO REFRESH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+(function(){
+  var startY=0, currY=0, pulling=false, threshold=70;
+  var ind=null;
+
+  function getInd(){
+    if(!ind)ind=document.getElementById('ptr-indicator');
+    return ind;
+  }
+
+  function onTouchStart(e){
+    // So ativa se estiver no topo da pagina e nao estiver em relatorio
+    var scr=document.querySelector('.screen.active .scroll');
+    if(scr&&scr.scrollTop>0)return;
+    if(S&&S.inReport)return;
+    startY=e.touches[0].clientY;
+    pulling=true;
+  }
+
+  function onTouchMove(e){
+    if(!pulling)return;
+    currY=e.touches[0].clientY;
+    var diff=currY-startY;
+    if(diff<10)return;
+    var el=getInd();
+    if(!el)return;
+    // Limita o arrasto
+    var pull=Math.min(diff,threshold+30);
+    var prog=Math.min(diff/threshold,1);
+    el.style.transform='translateX(-50%) translateY('+(pull-60)+'px)';
+    el.style.opacity=String(Math.min(prog*1.5,1));
+    el.classList.toggle('ready',diff>=threshold);
+    el.innerHTML=diff>=threshold?'&#8635;':'&#8595;';
+    el.classList.remove('loading');
+    if(diff>20)e.preventDefault();
+  }
+
+  function onTouchEnd(){
+    if(!pulling)return;
+    pulling=false;
+    var diff=currY-startY;
+    var el=getInd();
+    if(!el)return;
+    if(diff>=threshold){
+      // Executa refresh
+      el.classList.add('loading');
+      el.classList.remove('ready');
+      el.innerHTML='&#8635;';
+      el.style.transform='translateX(-50%) translateY(10px)';
+      el.style.opacity='1';
+      doRefresh(function(){
+        el.style.transform='translateX(-50%) translateY(-60px)';
+        el.style.opacity='0';
+        el.classList.remove('loading','ready');
+        el.innerHTML='&#8595;';
+      });
+    }else{
+      el.style.transform='translateX(-50%) translateY(-60px)';
+      el.style.opacity='0';
+      el.classList.remove('ready');
+    }
+    startY=0;currY=0;
+  }
+
+  function doRefresh(cb){
+    // Atualiza dados
+    try{updateDashDate();}catch(e){}
+    try{updateDashHeader();}catch(e){}
+    var proms=[];
+    if(typeof fbLoadHistory==='function'&&FB_OK){
+      proms.push(fbLoadHistory());
+    } else {
+      try{_loadHistLocal();renderDashRecent();}catch(e){}
+    }
+    // Tambem verifica rascunho
+    try{
+      if(FB_OK){
+        fetch(FB_URL+'/rascunho.json')
+          .then(function(r){return r.json();})
+          .then(function(d){
+            if(d&&d.step){S.hasDraft=true;updateDraftBadge();}
+            else{S.hasDraft=false;updateDraftBadge();}
+          }).catch(function(){});
+      }
+    }catch(e){}
+    // Aguarda 800ms e fecha o indicador
+    setTimeout(function(){
+      try{renderDashRecent();}catch(e){}
+      if(cb)cb();
+    },800);
+  }
+
+  // Adiciona listeners quando o app carregar
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      document.addEventListener('touchstart',onTouchStart,{passive:true});
+      document.addEventListener('touchmove',onTouchMove,{passive:false});
+      document.addEventListener('touchend',onTouchEnd,{passive:true});
+    },3000);
+  });
+})();
+
 </script>
 </body>
 </html>
