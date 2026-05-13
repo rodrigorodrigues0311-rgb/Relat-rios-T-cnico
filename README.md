@@ -19,7 +19,7 @@ App PWA para geração de relatórios técnicos da Equipe de Automação da CSN 
 
 - Identificação do relatório (empresa, equipe, data, DDS)
 - Tipo de atividade: Em Oportunidade ou Preventiva
-- Processos: Embarque de Minério, Descarga de Minério, Recarga de Carvão
+- Processos: Embarque de Minério, Descarga de Minério, Recarga de Carvão, Descarga de carvão
 - Atividades realizadas com anexo de fotos
 - Lista de colaboradores
 - Atividades não realizadas / desvios
