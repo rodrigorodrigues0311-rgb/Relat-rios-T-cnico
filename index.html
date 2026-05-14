@@ -698,7 +698,7 @@ select.fi option{background:#fff}
       <div class="succ-sub">Seu relatorio foi gerado e enviado.</div>
       <div class="proto-box"><div class="proto-lbl">Numero do Protocolo</div><div class="proto-num" id="proto-num"></div></div>
       <div class="act-list-succ">
-        <div class="act-row-s" onclick="makePDF()"><div class="arl"><span class="arl-ico">&#128196;</span><span class="arl-txt">Visualizar / Baixar PDF</span></div><span class="arr">&#8250;</span></div>
+        <div class="act-row-s" onclick="makePDF().catch(function(e){toast('Erro: '+(e.message||String(e)).substring(0,40));})"><div class="arl"><span class="arl-ico">&#128196;</span><span class="arl-txt">Visualizar / Baixar PDF</span></div><span class="arr">&#8250;</span></div>
         <div class="act-row-s" onclick="makeWPP()"><div class="arl"><span class="arl-ico">&#128172;</span><span class="arl-txt">Compartilhar WhatsApp</span></div><span class="arr">&#8250;</span></div>
       </div>
       <button class="btn-conclude" onclick="concludeReport()">Concluir</button>
@@ -2127,7 +2127,15 @@ async function generatePDFFromReport(r,photos){
   function rr(x,ry,w,h,rd,c){doc.setFillColor(c[0],c[1],c[2]);doc.roundedRect(x,ry,w,h,rd,rd,'F');}
   function rrs(x,ry,w,h,rd,c,lw){sd(c,lw||0.25);doc.roundedRect(x,ry,w,h,rd,rd,'S');}
   function rrfs(x,ry,w,h,rd,fc,sc){rr(x,ry,w,h,rd,fc);rrs(x,ry,w,h,rd,sc);}
-  function nPg(){putFoot();doc.addPage();y=MT;}
+  function drawBorder(){
+    doc.setDrawColor(navy[0],navy[1],navy[2]);
+    doc.setLineWidth(0.5);
+    doc.rect(6,6,W-12,H-12,'S');
+    doc.setDrawColor(border[0],border[1],border[2]);
+    doc.setLineWidth(0.3);
+    doc.rect(8,8,W-16,H-16,'S');
+  }
+  function nPg(){putFoot();doc.addPage();y=MT;drawBorder();}
   function chk(n){if(y+n>H-MB-8)nPg();}
 
   // tx: escreve texto simples SEM alterar y global (para textos alinhados lado a lado)
