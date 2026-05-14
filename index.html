@@ -2067,10 +2067,12 @@ function makeWPP(){
   document.getElementById('wmod').classList.add('show');
 }
 async function makePDF(){
+  try{
   // Se estiver na tela de sucesso, usa o ultimo relatorio salvo
   var succScreen=document.getElementById('scr-succ');
   if(succScreen&&succScreen.classList.contains('active')&&S.history.length>0){
     var lastReport=S.history[0];
+    toast('Gerando PDF...');
     await generatePDFFromReport(lastReport, S.photos);
     return;
   }
@@ -2090,9 +2092,27 @@ async function makePDF(){
     procs:Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;})
   };
   await generatePDFFromReport(r,S.photos);
+  }catch(err){
+    console.error('Erro PDF:',err);
+    toast('Erro ao gerar PDF: '+(err.message||String(err)).substring(0,40));
+  }
 }
 
 async function generatePDFFromReport(r,photos){
+  if(!r){toast('Erro: dados do relatorio nao encontrados');return;}
+  if(!window.jspdf){
+    toast('jsPDF nao carregado - tentando carregar...');
+    // Tenta carregar dinamicamente
+    await new Promise(function(res){
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload=res;s.onerror=res;
+      document.head.appendChild(s);
+      setTimeout(res,5000);
+    });
+    if(!window.jspdf){toast('Erro: jsPDF indisponivel');return;}
+  }
+  try{
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
   var W=210,H=297,ML=13,MR=13,MT=13,MB=16,CW=W-ML-MR;
@@ -2472,6 +2492,7 @@ async function generatePDFFromReport(r,photos){
       .then(function(){toast('PDF compartilhado!');})
       .catch(function(e){if(e.name!=='AbortError'){doc.save(fn);toast('PDF salvo!');}});
   }else{doc.save(fn);toast('PDF salvo!');}
+  }catch(pdfErr){console.error('PDF erro:',pdfErr);toast('Erro PDF: '+(pdfErr.message||String(pdfErr)).substring(0,50));}
 }
 
 // \u2500\u2500 PULL TO REFRESH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
