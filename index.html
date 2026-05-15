@@ -2218,7 +2218,7 @@ async function generatePDFFromReport(r,photos){
   doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,3,'F');
 
   // Logo CSN - grande e destacado
-  sf(22,navy,true);doc.text('CSN',ML,MT+10);
+  sf(20,navy,true);doc.text('CSN',ML,MT+10);
   sf(9,blue,true);doc.text('MINERACAO',ML,MT+16);
   sf(7,sub,false);doc.text('Equipe de Automacao',ML,MT+20.5);
   sd(navy,0.6);doc.line(ML,MT+23,ML+52,MT+23);
@@ -2229,7 +2229,7 @@ async function generatePDFFromReport(r,photos){
   y=MT+20;
 
   // ===== CARD RESPONSAVEL + BOXES =====
-  var cH=36, cW=CW*0.46;
+  var cH=32, cW=CW*0.46;
   rrfs(ML,y,cW,cH,4,navy,navy);
 
   var pSz=24, pX=ML+4, pY=y+6;
@@ -2257,8 +2257,8 @@ async function generatePDFFromReport(r,photos){
     if(row[2]==='HH DISPONIVEL'){doc.setFillColor(sub[0],sub[1],sub[2]);doc.circle(bxp+6.5,byp+7.5,3,'F');doc.setFillColor(white[0],white[1],white[2]);doc.circle(bxp+6.5,byp+7.5,1.7,'F');doc.setFillColor(sub[0],sub[1],sub[2]);doc.rect(bxp+6.3,byp+4.8,0.4,2.5,'F');}
     if(row[2]==='ORDENS OM'){doc.setFillColor(sub[0],sub[1],sub[2]);doc.roundedRect(bxp+3.5,byp+4,6,8,1,1,'F');doc.setFillColor(white[0],white[1],white[2]);doc.rect(bxp+4.5,byp+5.5,4,0.7,'F');doc.rect(bxp+4.5,byp+7,4,0.7,'F');doc.rect(bxp+4.5,byp+8.5,3,0.7,'F');}
     // Texto label e valor \u2014 alinhados ao X fixo
-    tx(row[2],bxp+14,byp+5.5,5.5,sub,true);
-    tx(row[3],bxp+14,byp+12.5,8.5,text,false);
+    tx(row[2],bxp+14,byp+5,7,sub,true);
+    tx(row[3],bxp+14,byp+12,10,text,true);
   });
   y+=cH+5;
 
@@ -2269,9 +2269,9 @@ async function generatePDFFromReport(r,photos){
   doc.setFillColor(blue[0],blue[1],blue[2]);
   doc.circle(ML+5.5,y+8,2,'F');doc.circle(ML+8.5,y+8,1.7,'F');
   doc.ellipse(ML+5.5,y+12,2.8,1.6,'F');doc.ellipse(ML+8.5,y+12,2.4,1.6,'F');
-  tx('SUPERVISORES / LIDER',ML+14,y+6,8,blue,true);
-  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+11.5,7.5,text,false);
-  tx('Lider: Edson Jose',ML+14,y+17,7.5,text,false);
+  tx('SUPERVISORES / LIDER',ML+14,y+6,9,blue,true);
+  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+12,8.5,text,false);
+  tx('Lider: Edson Jose',ML+14,y+18,8.5,text,false);
 
   if(r.dds){
     rrfs(ML+hw+4,y,hw,22,3,white,border);
@@ -2332,7 +2332,7 @@ async function generatePDFFromReport(r,photos){
     r.abss.forEach(function(a,i){
       var aph=cPh[a.name];
       if(aph){try{doc.addImage(aph,'JPEG',ML+16,ayy-4.5,7,7);}catch(e){}}
-      tx((i+1)+'. '+sa(a.name)+(a.reason?' - '+sa(a.reason):''),ML+(aph?25:16),ayy,8,text,false);
+      tx((i+1)+'. '+sa(a.name)+(a.reason?' - '+sa(a.reason):''),ML+(aph?25:16),ayy,9.5,text,false);
       ayy+=9;
     });
   }
@@ -2349,7 +2349,7 @@ async function generatePDFFromReport(r,photos){
   doc.rect(ML+4.5,y+7.5,4,0.7,'F');doc.rect(ML+4.5,y+9.5,4,0.7,'F');doc.rect(ML+4.5,y+11.5,3,0.7,'F');
 
   tx('ATIVIDADES REALIZADAS',ML+16,y+9,10,navy,true);
-  tx(sa((r.acts&&r.acts.length?r.acts.length:0)+' atividade(s)'),ML+16,y+15.5,8,sub,false);
+  tx(sa((r.acts&&r.acts.length?r.acts.length:0)+' atividade(s)'),ML+16,y+15.5,10,sub,false);
   y+=24;
 
   putFoot();
@@ -2358,7 +2358,8 @@ async function generatePDFFromReport(r,photos){
   if(r.acts&&r.acts.length){
     r.acts.forEach(function(act,ai){
       doc.addPage();y=MT;
-      doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,1.5,'F');
+      drawBorder();
+      doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,3,'F');
 
       // Header atividade
       rrfs(ML,y,CW,13,3,bgCard,border);
@@ -2367,10 +2368,9 @@ async function generatePDFFromReport(r,photos){
 
       // Descricao
       if(act.desc&&act.desc.trim()){
-        sf(8.5,text,false);
+        sf(10,text,false);
         var descL=doc.splitTextToSize(sa(act.desc),CW);
-        // Espa\u00e7amento compacto: 4.5mm por linha
-        descL.forEach(function(ln){chk(5);doc.text(ln,ML,y);y+=4.2;});
+        descL.forEach(function(ln){chk(5.5);doc.text(ln,ML,y);y+=5;});
         y+=3;
       }
 
@@ -2378,8 +2378,8 @@ async function generatePDFFromReport(r,photos){
       var cols3=act.cols||[];
       if(cols3.length){
         chk(28);
-        tx('COLABORADORES ENVOLVIDOS',ML,y,7.5,blue,true);y+=7;
-        var avSz=17,avGap=6;
+        tx('COLABORADORES ENVOLVIDOS',ML,y,10,blue,true);y+=8;
+        var avSz=22,avGap=8;
         var cx3=ML;
         cols3.forEach(function(colName){
           if(cx3+avSz+16>W-MR){cx3=ML;y+=avSz+13;chk(avSz+13);}
@@ -2409,7 +2409,7 @@ async function generatePDFFromReport(r,photos){
           // Nome abaixo
           var pts=colName.split(' ');
           var sn=pts.length>1?pts[0]+' '+pts[pts.length-1]:pts[0];
-          sf(5.5,sub,false);
+          sf(7,text,false);
           var nls=doc.splitTextToSize(sa(sn),avSz+10);
           doc.text(nls[0],cx3+avSz/2,y+avSz+4,{align:'center'});
           if(nls[1])doc.text(nls[1],cx3+avSz/2,y+avSz+7.5,{align:'center'});
