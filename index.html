@@ -2135,7 +2135,12 @@ async function generatePDFFromReport(r,photos){
     doc.setLineWidth(0.3);
     doc.rect(8,8,W-16,H-16,'S');
   }
-  function nPg(){putFoot();doc.addPage();y=MT;drawBorder();}
+  function nPg(){
+    putFoot();
+    doc.addPage();y=MT;
+    doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,4,'F');
+    drawBorder();
+  }
   function chk(n){if(y+n>H-MB-8)nPg();}
 
   // tx: escreve texto simples SEM alterar y global (para textos alinhados lado a lado)
@@ -2213,9 +2218,8 @@ async function generatePDFFromReport(r,photos){
   }
 
   // ===== PAG 1 =====
-  drawBorder(); // Borda da pagina
-  // Linha fina azul no topo
-  doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,3,'F');
+  doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,4,'F');
+  drawBorder();
 
   // Logo CSN - grande e destacado
   sf(20,navy,true);doc.text('CSN',ML,MT+10);
@@ -2348,9 +2352,27 @@ async function generatePDFFromReport(r,photos){
   doc.setFillColor(navy[0],navy[1],navy[2]);
   doc.rect(ML+4.5,y+7.5,4,0.7,'F');doc.rect(ML+4.5,y+9.5,4,0.7,'F');doc.rect(ML+4.5,y+11.5,3,0.7,'F');
 
+  var nActs=r.acts&&r.acts.length?r.acts.length:0;
+  var actListH=20+(nActs>0?nActs*8:0);
+  rrfs(ML,y,CW,actListH,3,white,border);
+  rr(ML,y,13,actListH,3,navy);
+  doc.setFillColor(white[0],white[1],white[2]);
+  doc.roundedRect(ML+3.5,y+5.5,6,9,1,1,'F');
+  doc.setFillColor(navy[0],navy[1],navy[2]);
+  doc.rect(ML+4.5,y+7.5,4,0.7,'F');doc.rect(ML+4.5,y+9.5,4,0.7,'F');doc.rect(ML+4.5,y+11.5,3,0.7,'F');
   tx('ATIVIDADES REALIZADAS',ML+16,y+9,10,navy,true);
-  tx(sa((r.acts&&r.acts.length?r.acts.length:0)+' atividade(s)'),ML+16,y+15.5,10,sub,false);
-  y+=24;
+  if(nActs===0){
+    tx('Nenhuma atividade registrada.',ML+16,y+16,9,sub,false);
+  } else {
+    var ay2=y+16;
+    r.acts.forEach(function(a,ai){
+      var preview=sa(a.desc||'').substring(0,70)+(sa(a.desc||'').length>70?'...':'');
+      sf(8.5,text,false);
+      doc.text((ai+1)+'. '+preview, ML+16, ay2);
+      ay2+=8;
+    });
+  }
+  y+=actListH+4;
 
   putFoot();
 
@@ -2358,8 +2380,8 @@ async function generatePDFFromReport(r,photos){
   if(r.acts&&r.acts.length){
     r.acts.forEach(function(act,ai){
       doc.addPage();y=MT;
+      doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,4,'F');
       drawBorder();
-      doc.setFillColor(navy[0],navy[1],navy[2]);doc.rect(0,0,W,3,'F');
 
       // Header atividade
       rrfs(ML,y,CW,13,3,bgCard,border);
