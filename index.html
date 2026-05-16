@@ -13,6 +13,8 @@
 <title>Relatorios Automacao - CSN</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <style>
@@ -1583,10 +1585,7 @@ function sendReport(){
   // Limpa rascunho do Firebase IMEDIATAMENTE para TODOS verem
   try{
     if(FB_OK&&FB_URL){
-      // Deleta 3x para garantir
-      fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});
-      setTimeout(function(){fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});},1000);
-      setTimeout(function(){fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});},3000);
+      fbClearDraft();
     }
   }catch(e){}
   S.hasDraft=false;S.inReport=false;updateDraftBadge();
@@ -1753,34 +1752,40 @@ var FB_POLL = null;
 
 // Inicializa e testa Firebase
 function fbInit(){
-  console.log('Firebase: iniciando...');
-  // Tenta conectar com PUT simples
-  fetch(FB_URL + '/ping.json', {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ts: Date.now(), ok: true})
-  })
-  .then(function(r){
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    FB_OK = true;
-    console.log('Firebase: conectado!');
-    // Atualiza banner
-    var title = document.getElementById('fb-status-title');
-    if(title) title.textContent = 'Modo Colaborativo Ativo';
-    var sub = document.getElementById('supa-status-label');
-    if(sub) sub.textContent = 'Sincronizado com a equipe';
-    var dot = document.getElementById('sync-dot');
-    if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
-    // Inicia sincroniza\u00e7\u00e3o
-    fbStartPolling();
-    setTimeout(fbLoadHistory, 500);
-  })
-  .catch(function(e){
-    console.warn('Firebase: falhou -', e.message);
+  try{
+    var firebaseConfig = {
+      databaseURL: FB_URL
+    };
+    // Inicializa o Firebase SDK (evita dupla inicializa\u00e7\u00e3o)
+    if(!firebase.apps || !firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }
+    var db = firebase.database();
+    // Testa escrita
+    db.ref('ping').set({ts: Date.now()}).then(function(){
+      FB_OK = true;
+      window._fbDB = db;
+      console.log('Firebase SDK: conectado!');
+      // Atualiza banner
+      var title = document.getElementById('fb-status-title');
+      if(title) title.textContent = 'Modo Colaborativo Ativo';
+      var sub = document.getElementById('supa-status-label');
+      if(sub) sub.textContent = 'Sincronizado com a equipe';
+      var dot = document.getElementById('sync-dot');
+      if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
+      toast('Firebase conectado!');
+      fbStartPolling();
+      setTimeout(fbLoadHistory, 500);
+    }).catch(function(e){
+      console.warn('Firebase SDK erro:', e.message);
+      FB_OK = false;
+      setTimeout(fbInit, 8000);
+    });
+  }catch(e){
+    console.warn('Firebase init erro:', e.message);
     FB_OK = false;
-    // Tenta novamente em 5 segundos
-    setTimeout(fbInit, 5000);
-  });
+    setTimeout(fbInit, 8000);
+  }
 }
 
 function fbSaveReport(report){
@@ -1795,18 +1800,12 @@ function fbSaveReport(report){
 
 // Salva rascunho no Firebase (sobrescreve sempre o mesmo node)
 function fbSaveDraft(draft){
-  if(!FB_OK) return;
-  draft._ts = Date.now();
-  draft.resp = draft.resp || localStorage.getItem('rn1') || '';
-  fetch(FB_URL + '/rascunho.json', {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(draft)
-  })
-  .then(function(){
-    console.log('Rascunho salvo no Firebase!');
-  })
-  .catch(function(e){ console.warn('fbSaveDraft:', e.message); });
+  if(!FB_OK||!window._fbDB) return;
+  try{
+    draft._ts = Date.now();
+    draft.resp = draft.resp || localStorage.getItem('rn1') || '';
+    window._fbDB.ref('rascunho').set(draft).catch(function(e){console.warn('fbSaveDraft:',e.message);});
+  }catch(e){console.warn('fbSaveDraft:',e.message);}
 }
 
 // Busca rascunho do Firebase
@@ -1871,12 +1870,69 @@ async function fbLoadHistory(){
 
 // Remove rascunho do Firebase (apos enviar)
 function fbClearDraft(){
-  if(!FB_OK) return;
-  fetch(FB_URL + '/rascunho.json', {method:'DELETE'})
-    .catch(function(e){ console.warn('fbClearDraft:', e.message); });
+  if(!FB_OK||!window._fbDB) return;
+  window._fbDB.ref('rascunho').remove().catch(function(e){console.warn('fbClearDraft:',e.message);});
 }
 
 // Polling \u2014 verifica rascunhos e historico a cada 8 segundos
+function fbTestManual(){
+  var result = document.getElementById('fb-test-result');
+  var dot = document.getElementById('sync-dot');
+  var title = document.getElementById('fb-status-title');
+  if(result) result.textContent = 'Testando...';
+  fetch(FB_URL + '/.json?shallow=true')
+    .then(function(r){
+      if(result){result.textContent = 'GET status: ' + r.status + ' - ' + (r.ok?'OK':'FALHOU');result.style.display='block';}
+      if(r.ok){
+        if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
+        if(title) title.textContent = 'Firebase Conectado!';
+        FB_OK = true;
+        fbStartPolling();
+        fbLoadHistory();
+      }
+      return r.text();
+    })
+    .then(function(txt){
+      if(result){result.textContent += ' | Resp: ' + txt.substring(0,30);result.style.display='block';}
+    })
+    .catch(function(e){
+      if(result){result.textContent = 'ERRO: ' + (e.message||String(e)).substring(0,60);result.style.display='block';}
+      if(dot){dot.style.background='#e53935';dot.style.boxShadow='0 0 8px #e53935';}
+    });
+}
+
+function fbStartPolling(){
+  if(!FB_OK||!window._fbDB||FB_POLL) return;
+  // Listener em tempo real para rascunho
+  window._fbDB.ref('rascunho').on('value', function(snap){
+    var data = snap.val();
+    var minhaResp = localStorage.getItem('rn1') || '';
+    if(data && data._ts){
+      S.hasDraft = true; updateDraftBadge();
+      if(data.resp && data.resp !== minhaResp){
+        toast('Rascunho de ' + data.resp + ' disponivel!');
+      }
+    } else {
+      if(S.hasDraft){
+        S.hasDraft = false; updateDraftBadge();
+        try{localStorage.removeItem(SK.draft);}catch(e){}
+      }
+    }
+  });
+  // Listener em tempo real para novos relat\u00f3rios
+  window._fbDB.ref('relatorios').on('child_added', function(snap){
+    var r = snap.val();
+    if(!r||!r.proto) return;
+    var exists = S.history.some(function(h){return h.proto===r.proto;});
+    if(!exists){
+      S.history.unshift(r);
+      try{localStorage.setItem(SK.history,JSON.stringify(S.history));}catch(e){}
+      renderDashRecent();
+    }
+  });
+  FB_POLL = true;
+}
+
 function fbTestManual(){
   var result = document.getElementById('fb-test-result');
   var dot = document.getElementById('sync-dot');
