@@ -1753,62 +1753,36 @@ var FB_POLL = null;
 
 // Inicializa e testa Firebase
 function fbInit(){
-  console.log('Iniciando Firebase...', FB_URL);
-  // Testa com GET simples primeiro (mais confiavel)
+  console.log('Firebase: iniciando...');
+  // Tenta conectar com PUT simples
   fetch(FB_URL + '/ping.json', {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({t: Date.now()})
-    })
-    .then(function(r){
-      console.log('Firebase resposta status:', r.status);
-      if(!r.ok) throw new Error('Status ' + r.status);
-      return r.json();
-    })
-    .then(function(data){
-      console.log('Firebase OK!');
-      FB_OK = true;
-      var cb = document.getElementById('collab-banner');
-      if(cb) cb.style.display = 'flex';
-      var sl = document.getElementById('supa-status-label');
-      if(sl) sl.textContent = 'Conectado via Firebase';
-      fbStartPolling();
-      fbLoadHistory();
-      toast('Firebase conectado!');
-    })
-    .catch(function(e){
-      console.warn('Firebase GET falhou:', e.message||e);
-      // Tenta PUT como fallback
-      fetch(FB_URL + '/ping.json', {
-        method: 'PUT',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({t: Date.now()})
-      })
-      .then(function(r){
-        console.log('Firebase PUT status:', r.status);
-        if(!r.ok) throw new Error('Status ' + r.status);
-        return r.json();
-      })
-      .then(function(){
-        FB_OK = true;
-        var cb = document.getElementById('collab-banner');
-        if(cb) cb.style.display = 'flex';
-        var sl = document.getElementById('supa-status-label');
-        if(sl) sl.textContent = 'Conectado via Firebase';
-        fbStartPolling();
-        fbLoadHistory();
-        toast('Firebase conectado!');
-      })
-      .catch(function(e2){
-        console.warn('Firebase PUT falhou:', e2.message||e2);
-        FB_OK = false;
-        // Mostra erro detalhado
-        var msg = e2.message || String(e2) || 'erro desconhecido';
-        });
-    });
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ts: Date.now(), ok: true})
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    FB_OK = true;
+    console.log('Firebase: conectado!');
+    // Atualiza banner
+    var title = document.getElementById('fb-status-title');
+    if(title) title.textContent = 'Modo Colaborativo Ativo';
+    var sub = document.getElementById('supa-status-label');
+    if(sub) sub.textContent = 'Sincronizado com a equipe';
+    var dot = document.getElementById('sync-dot');
+    if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
+    // Inicia sincroniza\u00e7\u00e3o
+    fbStartPolling();
+    setTimeout(fbLoadHistory, 500);
+  })
+  .catch(function(e){
+    console.warn('Firebase: falhou -', e.message);
+    FB_OK = false;
+    // Tenta novamente em 5 segundos
+    setTimeout(fbInit, 5000);
+  });
 }
 
-// Salva relatorio enviado no Firebase
 function fbSaveReport(report){
   if(!FB_OK) return;
   var key = report.proto.replace(/[^a-zA-Z0-9_-]/g,'_');
@@ -1837,12 +1811,12 @@ function fbSaveDraft(draft){
 
 // Busca rascunho do Firebase
 async function fbFetchDraft(){
+  // Aguarda Firebase conectar (ate 5 segundos)
   if(!FB_OK){
-    // Aguarda ate 4 segundos
-    var w = 0;
-    while(!FB_OK && w < 4000){
-      await new Promise(function(r){setTimeout(r,400);});
-      w += 400;
+    var w=0;
+    while(!FB_OK && w<5000){
+      await new Promise(function(res){setTimeout(res,500);});
+      w+=500;
     }
   }
   if(!FB_OK){
