@@ -834,6 +834,19 @@ body.dark .prof-row{background:#1a1a2e;border-color:#0f3460;}
         <div class="prof-row"><div class="prof-row-ico">&#128101;</div><div class="prof-row-info"><div class="prof-row-lbl">Supervisores</div><div class="prof-row-val">Rodrigo Lima / Rafael Gomes</div></div></div>
         <div class="prof-row"><div class="prof-row-ico">&#128272;</div><div class="prof-row-info"><div class="prof-row-lbl">Lider</div><div class="prof-row-val">Edson Jose</div></div></div>
       </div>
+      <div class="prof-sec" style="margin-top:8px">
+        <div class="prof-sec-title">Aparencia</div>
+        <div class="dark-toggle prof-row" onclick="toggleDark()" style="border-radius:var(--r);padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="prof-row-ico" style="background:#1e1e2e;font-size:1.1rem">&#127769;</div>
+            <div class="prof-row-info">
+              <div class="prof-row-lbl">Modo Escuro</div>
+              <div class="prof-row-val" id="dark-mode-label">Desativado</div>
+            </div>
+          </div>
+          <div class="dark-switch" id="dark-sw"></div>
+        </div>
+      </div>
       <div style="height:16px"></div>
     </div>
     <div class="bottom-nav"><button class="bn-item" onclick="navTo('scr-dash')"><span class="bn-icon">&#127968;</span><span class="bn-lbl">Inicio</span></button><button class="bn-item" onclick="navTo('scr-history')"><span class="bn-icon">&#128203;</span><span class="bn-lbl">Relatorios</span></button><button class="bn-item" onclick="startReport()" style="position:relative"><span class="bn-fab">&#43;</span><span class="bn-icon" style="margin-top:18px;opacity:0">.</span><span class="bn-lbl">Novo</span></button><button class="bn-item" onclick="navTo('scr-indicators')"><span class="bn-icon">&#128200;</span><span class="bn-lbl">Indicadores</span></button><button class="bn-item act" onclick="navTo('scr-profile')"><span class="bn-icon">&#128100;</span><span class="bn-lbl">Perfil</span></button></div>
@@ -2721,6 +2734,8 @@ function toggleDark(){
   var isDark=document.body.classList.toggle('dark');
   var sw=document.getElementById('dark-sw');
   if(sw)sw.classList.toggle('on',isDark);
+  var lb=document.getElementById('dark-mode-label');
+  if(lb)lb.textContent=isDark?'Ativado':'Desativado';
   try{localStorage.setItem('darkMode',isDark?'1':'0');}catch(e){}
 }
 function loadDarkMode(){
@@ -2730,6 +2745,8 @@ function loadDarkMode(){
       document.body.classList.add('dark');
       var sw=document.getElementById('dark-sw');
       if(sw)sw.classList.add('on');
+      var lb=document.getElementById('dark-mode-label');
+      if(lb)lb.textContent='Ativado';
     }
   }catch(e){}
 }
