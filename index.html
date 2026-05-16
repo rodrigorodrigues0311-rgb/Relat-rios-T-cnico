@@ -652,6 +652,45 @@ body.dark .stat-lbl{color:#94a3b8;}
     <div class="bottom-nav"><button class="bn-item act" onclick="navTo('scr-dash')"><span class="bn-icon">&#127968;</span><span class="bn-lbl">Inicio</span></button><button class="bn-item" onclick="navTo('scr-history')"><span class="bn-icon">&#128203;</span><span class="bn-lbl">Relatorios</span></button><button class="bn-item" onclick="startReport()" style="position:relative"><span class="bn-fab">&#43;</span><span class="bn-icon" style="margin-top:18px;opacity:0">.</span><span class="bn-lbl">Novo</span></button><button class="bn-item" onclick="navTo('scr-indicators')"><span class="bn-icon">&#128200;</span><span class="bn-lbl">Indicadores</span></button><button class="bn-item" onclick="navTo('scr-profile')"><span class="bn-icon">&#128100;</span><span class="bn-lbl">Perfil</span></button></div>
   </div>
 
+
+  <!-- ===== STEP 2: TIPO DE ATIVIDADE ===== -->
+  <div class="screen" id="scr-s2">
+    <div class="topbar">
+      <div class="tb-row">
+        <button class="tb-back" onclick="confirmBack()">&#8592;</button>
+        <div><div class="tb-title">Tipo de Atividade</div><div class="tb-sub">Passo 2 de 6</div></div>
+      </div>
+    </div>
+    <div class="steps-wrap"><div class="steps" id="sb2"></div><div class="steps-label" id="sl2"></div></div>
+    <div class="scroll padded">
+      <p class="form-hint">Selecione o tipo de atividade realizada hoje:</p>
+      <div class="type-c" id="tc-prev" onclick="selType('Preventiva','prev','blue')"><div class="ti b">&#128737;</div><div class="type-info"><div class="type-nm">Preventiva</div><div class="type-ds">Manutencoes e inspecoes programadas</div></div><div class="type-chk" id="chk-prev"></div></div>
+      <div class="type-c" id="tc-cor" onclick="selType('Corretiva','cor','red')"><div class="ti r">&#128308;</div><div class="type-info"><div class="type-nm">Corretiva</div><div class="type-ds">Correcoes e reparos de falhas</div></div><div class="type-chk" id="chk-cor"></div></div>
+      <div class="type-c" id="tc-mel" onclick="selType('Melhoria','mel','grn')"><div class="ti g">&#128200;</div><div class="type-info"><div class="type-nm">Melhoria</div><div class="type-ds">Melhorias e otimizacoes de processos</div></div><div class="type-chk" id="chk-mel"></div></div>
+      <div class="type-c" id="tc-eme" onclick="selType('Emergencial','eme','org')"><div class="ti o">&#9888;</div><div class="type-info"><div class="type-nm">Emergencial</div><div class="type-ds">Atendimentos emergenciais urgentes</div></div><div class="type-chk" id="chk-eme"></div></div>
+      <div class="type-c" id="tc-opo" onclick="selType('Em Oportunidade','opo','blue')"><div class="ti b">&#128161;</div><div class="type-info"><div class="type-nm">Em Oportunidade</div><div class="type-ds">Atividades realizadas aproveitando paradas</div></div><div class="type-chk" id="chk-opo"></div></div>
+      <div class="type-c" id="tc-pst" onclick="selType('Pendencias de Seguranca do Trabalho','pst','red')"><div class="ti r">&#9936;</div><div class="type-info"><div class="type-nm">Pend. Seg. Trabalho</div><div class="type-ds">Pendencias e conformidades de seguranca</div></div><div class="type-chk" id="chk-pst"></div></div>
+      <div id="proc-sec" style="display:none;margin-top:4px">
+        <label class="form-label" style="margin-bottom:8px">Processos Envolvidos</label>
+        <div class="proc-grid">
+          <div class="proc-c"><input type="checkbox" name="proc" value="Embarque Minerio"><label>Embarque Minerio</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Bloco de Energia"><label>Bloco de Energia</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Patio de Estocagem"><label>Patio de Estocagem</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Correia Transportadora"><label>Correia Transportadora</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Britagem"><label>Britagem</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Filtragem"><label>Filtragem</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Concentracao"><label>Concentracao</label></div>
+          <div class="proc-c"><input type="checkbox" name="proc" value="Utilidades"><label>Utilidades</label></div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="btn-back" onclick="goStep(1)">&#8592; Voltar</button>
+      <button class="btn-next" onclick="if(!S.tipo){toast('Selecione o tipo de atividade');}else{goStep(3);}">Continuar &#8594;</button>
+    </div>
+    <div class="bottom-nav"><button class="bn-item act" onclick="navTo('scr-dash')"><span class="bn-icon">&#127968;</span><span class="bn-lbl">Inicio</span></button><button class="bn-item" onclick="navTo('scr-history')"><span class="bn-icon">&#128203;</span><span class="bn-lbl">Relatorios</span></button><button class="bn-item" onclick="startReport()" style="position:relative"><span class="bn-fab">&#43;</span><span class="bn-icon" style="margin-top:18px;opacity:0">.</span><span class="bn-lbl">Novo</span></button><button class="bn-item" onclick="navTo('scr-indicators')"><span class="bn-icon">&#128200;</span><span class="bn-lbl">Indicadores</span></button><button class="bn-item" onclick="navTo('scr-profile')"><span class="bn-icon">&#128100;</span><span class="bn-lbl">Perfil</span></button></div>
+  </div>
+
   <!-- ===== STEP 3: ATIVIDADES ===== -->
   <div class="screen" id="scr-s3">
     <div class="topbar">
@@ -1720,7 +1759,6 @@ var FB_POLL = null;
 // Inicializa e testa Firebase
 function fbInit(){
   console.log('Iniciando Firebase...', FB_URL);
-  toast('Testando Firebase...');
   // Testa com GET simples primeiro (mais confiavel)
   fetch(FB_URL + '/.json?shallow=true')
     .then(function(r){
@@ -1741,7 +1779,6 @@ function fbInit(){
     })
     .catch(function(e){
       console.warn('Firebase GET falhou:', e.message||e);
-      toast('GET falhou: ' + (e.message||'').substring(0,30) + ' - tentando PUT...');
       // Tenta PUT como fallback
       fetch(FB_URL + '/ping.json', {
         method: 'PUT',
@@ -1768,8 +1805,7 @@ function fbInit(){
         FB_OK = false;
         // Mostra erro detalhado
         var msg = e2.message || String(e2) || 'erro desconhecido';
-        toast('Firebase falhou: ' + msg.substring(0,50));
-      });
+        });
     });
 }
 
