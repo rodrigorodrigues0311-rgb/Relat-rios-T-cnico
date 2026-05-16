@@ -448,6 +448,7 @@ select.fi option{background:#fff}
     <div style="flex:1;min-width:0">
       <div style="font-size:.82rem;font-weight:700;color:var(--blue)" id="fb-status-title">Conectando ao Firebase...</div>
       <div style="font-size:.72rem;color:var(--g500);margin-top:1px" id="supa-status-label">Aguarde</div>
+    <div style="font-size:.6rem;color:var(--g400);margin-top:2px">v20260516-023450</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#f57f17;box-shadow:0 0 8px #f57f17"></div>
@@ -1463,15 +1464,15 @@ function sendReport(){
   // Supabase (fallback)
   try{if(typeof dbSaveReport==='function'&&DB_OK)dbSaveReport(report);}catch(e){}
   // Limpa rascunho local
-  try{localStorage.removeItem(SK.draft);}catch(e){}
-  // Limpa rascunho do Firebase para TODOS verem
+  try{localStorage.removeItem(SK.draft);localStorage.removeItem('draft_proto');}catch(e){}
+  S.hasDraft=false; updateDraftBadge();
+  // Limpa rascunho do Firebase IMEDIATAMENTE para TODOS verem
   try{
-    if(typeof fbClearDraft==='function'&&FB_OK){
-      fbClearDraft();
-      // Notifica todos que o rascunho foi enviado
-      setTimeout(function(){
-        fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});
-      },500);
+    if(FB_OK&&FB_URL){
+      // Deleta 3x para garantir
+      fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});
+      setTimeout(function(){fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});},1000);
+      setTimeout(function(){fetch(FB_URL+'/rascunho.json',{method:'DELETE'}).catch(function(){});},3000);
     }
   }catch(e){}
   S.hasDraft=false;S.inReport=false;updateDraftBadge();
@@ -2515,7 +2516,7 @@ async function generatePDFFromReport(r,photos){
     sf(7,white,true);doc.text(pg+'/'+tot,W-MR-6,H-MB+8,{align:'center'});
   }
 
-  var fn='Relatorio_CSN_'+(r.date||'').replace(/[/]/g,'-')+'.pdf';
+  var fn='Relatorio_CSN_'+(r.proto||('_'+(r.date||'').replace(/[/]/g,'-')))+'.pdf';
   var bl=doc.output('blob');
   if(navigator.share){
     navigator.share({title:'Relatorio CSN',files:[new File([bl],fn,{type:'application/pdf'})]})
