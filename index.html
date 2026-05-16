@@ -377,29 +377,94 @@ select.fi option{background:#fff}
 
 /* ── MODO ESCURO ─────────────────────────────────────── */
 body.dark{
-  --g50:#1a1a2e;--g100:#16213e;--g200:#0f3460;--g300:#1a1a2e;
+  --g50:#1a1a2e;--g100:#16213e;--g200:#2d3748;--g300:#2d3748;
   --g400:#94a3b8;--g500:#cbd5e1;--g600:#e2e8f0;--g700:#f1f5f9;
   --g900:#f8fafc;
   --blue:#60a5fa;--blue-lt:#1e3a5f;
+  --green2:#4ade80;--orange:#fbbf24;--red2:#f87171;
   background:#0f0f1a;color:#f1f5f9;
 }
 body.dark .screen{background:#0f0f1a;}
-body.dark .dash-card{background:#1a1a2e;border-color:#0f3460;}
-body.dark .rpt-item{background:#1a1a2e;border-color:#0f3460;}
-body.dark .bottom-nav{background:#1a1a2e;border-color:#0f3460;}
-body.dark .fi{background:#1a1a2e;border-color:#0f3460;color:#f1f5f9;}
+body.dark .dash-body{background:#0f0f1a;}
+/* Cards e containers */
+body.dark .dash-card{background:#1a1a2e;border-color:#2d3748;color:#f1f5f9;}
+body.dark .dash-card-title{color:#f1f5f9;}
+body.dark .dash-card-sub{color:#94a3b8;}
+body.dark .rpt-item{background:#1a1a2e;border-color:#2d3748;}
+body.dark .rpt-title{color:#f1f5f9;}
+body.dark .rpt-meta{color:#94a3b8;}
+/* Nav */
+body.dark .bottom-nav{background:#1a1a2e;border-color:#2d3748;}
+body.dark .bn-item{color:#94a3b8;}
+body.dark .bn-item.act{color:#60a5fa;}
+/* Inputs e selects */
+body.dark .fi{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark select{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark select option{background:#1e293b;color:#f1f5f9;}
+body.dark textarea{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark input[type=text]{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark input[type=date]{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+/* Modais */
 body.dark .modal-sh{background:#1a1a2e;}
-body.dark .hd-card{background:#1a1a2e;border-color:#0f3460;}
-body.dark .type-c{background:#1a1a2e;border-color:#0f3460;}
-body.dark .proc-c{background:#1a1a2e;border-color:#0f3460;}
-body.dark .act-item{background:#1a1a2e;border-color:#0f3460;}
-body.dark .abs-item{background:#1a1a2e;}
-body.dark #collab-banner{background:linear-gradient(135deg,#1e3a5f,#1a1a2e);border-color:#0f3460;}
+body.dark .modal-title{color:#f1f5f9;}
+body.dark .form-label{color:#94a3b8;}
+body.dark .form-sec label{color:#94a3b8;}
+/* Cards de detalhe */
+body.dark .hd-card{background:#1a1a2e;border-color:#2d3748;}
+body.dark .hd-label{color:#94a3b8;}
+body.dark .hd-value{color:#f1f5f9;}
+body.dark .hd-card-title{color:#60a5fa;}
+/* Tipos de atividade */
+body.dark .type-c{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark .type-lb{color:#f1f5f9;}
+body.dark .type-ico{color:#f1f5f9;}
+/* Processos */
+body.dark .proc-c{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark .proc-c label{color:#f1f5f9;}
+/* Atividades */
+body.dark .act-item{background:#1a1a2e;border-color:#2d3748;}
+body.dark .act-title{color:#f1f5f9;}
+body.dark .abs-item{background:#1a1a2e;border-color:#2d3748;}
+body.dark .abs-nm{color:#f1f5f9;}
+body.dark .abs-rs{color:#94a3b8;}
+/* Colaborativo */
+body.dark #collab-banner{background:linear-gradient(135deg,#1e3a5f,#1a1a2e);border-color:#2d3748;}
+/* Sucesso */
 body.dark .succ-body{background:#1a1a2e;}
-body.dark .rev-item{border-color:#0f3460;}
-body.dark select option{background:#1a1a2e;}
-body.dark .prof-sec{background:#1a1a2e;}
-body.dark .prof-row{background:#1a1a2e;border-color:#0f3460;}
+body.dark .act-row-s{background:#1e293b;border-color:#2d3748;}
+body.dark .act-row-s .arl-txt{color:#f1f5f9;}
+/* Review */
+body.dark .rev-item{border-color:#2d3748;background:#1a1a2e;}
+body.dark .rev-label{color:#94a3b8;}
+body.dark .rev-val{color:#f1f5f9;}
+body.dark .rev-ico{color:#60a5fa;}
+/* Perfil */
+body.dark .prof-sec{background:#0f0f1a;}
+body.dark .prof-sec-title{color:#94a3b8;}
+body.dark .prof-row{background:#1a1a2e;border-color:#2d3748;}
+body.dark .prof-row-lbl{color:#94a3b8;}
+body.dark .prof-row-val{color:#f1f5f9;}
+body.dark .prof-row-ico{background:#1e293b;}
+/* Steps */
+body.dark .step-dot{background:#2d3748;color:#94a3b8;}
+body.dark .step-dot.act{background:#60a5fa;color:#fff;}
+body.dark .step-dot.done{background:#4ade80;color:#fff;}
+body.dark .step-line{background:#2d3748;}
+body.dark .step-line.done{background:#60a5fa;}
+/* Section headers */
+body.dark .form-sec-title{color:#60a5fa;}
+body.dark .sect-title{color:#f1f5f9;}
+/* DP rows */
+body.dark .dp-row textarea{background:#1e293b;border-color:#2d3748;color:#f1f5f9;}
+body.dark .dp-del{background:#2d3748;color:#f87171;}
+/* Photo */
+body.dark .ph-wrap{background:#1e293b;border-color:#2d3748;}
+/* Histórico */
+body.dark .badge{background:#1e3a5f;color:#60a5fa;}
+/* Indicadores */
+body.dark .stat-card{background:#1a1a2e;border-color:#2d3748;}
+body.dark .stat-val{color:#60a5fa;}
+body.dark .stat-lbl{color:#94a3b8;}
 .dark-toggle{
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 16px;cursor:pointer;
@@ -555,6 +620,14 @@ body.dark .prof-row{background:#1a1a2e;border-color:#0f3460;}
         <div class="fi-ro"><span class="ico">&#128101;</span>Automacao</div>
       </div>
       <div class="form-sec">
+        <label class="form-label">Responsavel</label>
+        <input type="text" class="fi" id="f-resp" placeholder="Nome do responsavel">
+      </div>
+      <div class="form-sec">
+        <label class="form-label">Cargo / Funcao</label>
+        <input type="text" class="fi" id="f-cargo" placeholder="Ex: Tecnico de Automacao">
+      </div>
+      <div class="form-sec">
         <label class="form-label">Data</label>
         <input type="date" class="fi" id="f-data">
       </div>
@@ -570,62 +643,7 @@ body.dark .prof-row{background:#1a1a2e;border-color:#0f3460;}
         <label class="form-label">Tema do DDS</label>
         <input type="text" class="fi" id="f-dds" placeholder="Ex: Trabalho em altura...">
       </div>
-      <div class="form-sec">
-        <label class="form-label">Responsavel</label>
-        <div style="display:flex;gap:12px;align-items:center">
-          <div class="resp-pc" id="rpc">
-            <span class="resp-pc-ico" id="rpico">&#128100;</span>
-            <img id="rpimg" src="" alt="">
-          </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
-            <input type="text" class="fi" id="f-resp" placeholder="Nome completo" style="margin:0">
-            <input type="text" class="fi" id="f-cargo" placeholder="Cargo / Funcao" style="margin:0">
-          </div>
-        </div>
-        <input type="file" id="rpinp" accept="image/*" capture="user" style="display:none">
-      </div>
-      <div style="background:var(--blue-lt);border-radius:var(--r);padding:13px;margin-bottom:16px">
-        <div style="font-size:.72rem;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Supervisores / Lider</div>
-        <div style="font-size:.88rem;color:var(--g800);line-height:1.9">
-          <div><strong>Supervisores:</strong> Rodrigo Lima / Rafael Gomes</div>
-          <div><strong>Lider:</strong> Edson Jose</div>
-        </div>
-      </div>
-    </div>
-    <div class="action-bar">
-      <button class="btn-back" onclick="confirmBack()">Cancelar</button>
-      <button class="btn-next" onclick="goStep(2)">Continuar &#8594;</button>
-    </div>
-    <div class="bottom-nav"><button class="bn-item act" onclick="navTo('scr-dash')"><span class="bn-icon">&#127968;</span><span class="bn-lbl">Inicio</span></button><button class="bn-item" onclick="navTo('scr-history')"><span class="bn-icon">&#128203;</span><span class="bn-lbl">Relatorios</span></button><button class="bn-item" onclick="startReport()" style="position:relative"><span class="bn-fab">&#43;</span><span class="bn-icon" style="margin-top:18px;opacity:0">.</span><span class="bn-lbl">Novo</span></button><button class="bn-item" onclick="navTo('scr-indicators')"><span class="bn-icon">&#128200;</span><span class="bn-lbl">Indicadores</span></button><button class="bn-item" onclick="navTo('scr-profile')"><span class="bn-icon">&#128100;</span><span class="bn-lbl">Perfil</span></button></div>
-  </div>
-
-  <!-- ===== STEP 2: TIPO ATIVIDADE ===== -->
-  <div class="screen" id="scr-s2">
-    <div class="topbar">
-      <div class="tb-row">
-        <button class="tb-back" onclick="goStep(1)">&#8592;</button>
-        <div><div class="tb-title">Novo Relatorio</div><div class="tb-sub">Passo 2 de 6 - Tipo de Atividade</div></div>
-      </div>
-    </div>
-    <div class="steps-wrap"><div class="steps" id="sb2"></div></div>
-    <div class="scroll padded">
-      <p style="font-size:.85rem;color:var(--g500);margin-bottom:16px">Selecione o tipo de atividade realizada hoje:</p>
-      <div class="type-c" id="tc-prev" onclick="selType('Preventiva','prev','blue')"><div class="ti b">&#128737;</div><div class="type-info"><div class="type-nm">Preventiva</div><div class="type-ds">Manutencoes e inspecoes programadas</div></div><div class="type-chk" id="chk-prev"></div></div>
-      <div class="type-c" id="tc-cor" onclick="selType('Corretiva','cor','red')"><div class="ti r">&#128308;</div><div class="type-info"><div class="type-nm">Corretiva</div><div class="type-ds">Correcoes e reparos de falhas</div></div><div class="type-chk" id="chk-cor"></div></div>
-      <div class="type-c" id="tc-mel" onclick="selType('Melhoria','mel','grn')"><div class="ti g">&#128200;</div><div class="type-info"><div class="type-nm">Melhoria</div><div class="type-ds">Melhorias e otimizacoes de processos</div></div><div class="type-chk" id="chk-mel"></div></div>
-      <div class="type-c" id="tc-eme" onclick="selType('Emergencial','eme','org')"><div class="ti o">&#9888;</div><div class="type-info"><div class="type-nm">Emergencial</div><div class="type-ds">Atendimentos emergenciais e nao planejados</div></div><div class="type-chk" id="chk-eme"></div></div>
-      <div class="type-c" id="tc-opo" onclick="selType('Em Oportunidade','opo','blue')"><div class="ti b">&#128161;</div><div class="type-info"><div class="type-nm">Em Oportunidade</div><div class="type-ds">Atividades realizadas aproveitando parada</div></div><div class="type-chk" id="chk-opo"></div></div>
-      <div id="proc-sec" style="display:none;margin-top:4px">
-        <label class="form-label" style="margin-bottom:9px">Processo em Preventiva</label>
-        <label class="proc-c" id="pc1"><input type="checkbox" name="proc" value="Embarque Minerio"> <span>Embarque de Minerio</span></label>
-        <label class="proc-c" id="pc2"><input type="checkbox" name="proc" value="Descarga Minerio"> <span>Descarga de Minerio</span></label>
-        <label class="proc-c" id="pc3"><input type="checkbox" name="proc" value="Recarga Carvao"> <span>Recarga de Carvao</span></label>
-        <label class="proc-c" id="pc4"><input type="checkbox" name="proc" value="Descarga Carvao"> <span>Descarga de Carvao</span></label>
-      </div>
-      <div class="form-sec" style="margin-top:14px">
-        <label class="form-label">Equipamento</label>
-        <input type="text" class="fi" id="f-equip" placeholder="Ex: CLP Siemens S7-1500...">
-      </div>
+      
     </div>
     <div class="action-bar">
       <button class="btn-back" onclick="goStep(1)">Voltar</button>
