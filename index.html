@@ -2231,13 +2231,13 @@ async function generatePDFFromReport(r,photos){
   // Titulo
   sf(17,navy,true);doc.text('RELATORIO DE ATIVIDADES',W-MR,MT+10,{align:'right'});
   sf(8,sub,false);doc.text(sa(r.date||'--'),W-MR,MT+14,{align:'right'});
-  y=MT+20;
+  y=MT+27;
 
   // ===== CARD RESPONSAVEL + BOXES =====
-  var cH=32, cW=CW*0.46;
+  var cH=40, cW=CW*0.46;
   rrfs(ML,y,cW,cH,4,navy,navy);
 
-  var pSz=24, pX=ML+4, pY=y+6;
+  var pSz=28, pX=ML+4, pY=y+6;
   if(rPh){try{doc.addImage(rPh,'JPEG',pX,pY,pSz,pSz);}catch(e){}}
   else{rr(pX,pY,pSz,pSz,12,bgCard);sf(14,blue,true);doc.text('?',pX+pSz/2,pY+pSz/2+3,{align:'center'});}
 
@@ -2262,8 +2262,8 @@ async function generatePDFFromReport(r,photos){
     if(row[2]==='HH DISPONIVEL'){doc.setFillColor(sub[0],sub[1],sub[2]);doc.circle(bxp+6.5,byp+7.5,3,'F');doc.setFillColor(white[0],white[1],white[2]);doc.circle(bxp+6.5,byp+7.5,1.7,'F');doc.setFillColor(sub[0],sub[1],sub[2]);doc.rect(bxp+6.3,byp+4.8,0.4,2.5,'F');}
     if(row[2]==='ORDENS OM'){doc.setFillColor(sub[0],sub[1],sub[2]);doc.roundedRect(bxp+3.5,byp+4,6,8,1,1,'F');doc.setFillColor(white[0],white[1],white[2]);doc.rect(bxp+4.5,byp+5.5,4,0.7,'F');doc.rect(bxp+4.5,byp+7,4,0.7,'F');doc.rect(bxp+4.5,byp+8.5,3,0.7,'F');}
     // Texto label e valor \u2014 alinhados ao X fixo
-    tx(row[2],bxp+14,byp+5,7,sub,true);
-    tx(row[3],bxp+14,byp+12,10,text,true);
+    tx(row[2],bxp+14,byp+6,7.5,sub,true);
+    tx(row[3],bxp+14,byp+14,11,text,true);
   });
   y+=cH+5;
 
@@ -2274,9 +2274,9 @@ async function generatePDFFromReport(r,photos){
   doc.setFillColor(blue[0],blue[1],blue[2]);
   doc.circle(ML+5.5,y+8,2,'F');doc.circle(ML+8.5,y+8,1.7,'F');
   doc.ellipse(ML+5.5,y+12,2.8,1.6,'F');doc.ellipse(ML+8.5,y+12,2.4,1.6,'F');
-  tx('SUPERVISORES / LIDER',ML+14,y+6,9,blue,true);
-  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+12,8.5,text,false);
-  tx('Lider: Edson Jose',ML+14,y+18,8.5,text,false);
+  tx('SUPERVISORES / LIDER',ML+14,y+7,9.5,blue,true);
+  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+14,9,text,false);
+  tx('Lider: Edson Jose',ML+14,y+21,9,text,false);
 
   if(r.dds){
     rrfs(ML+hw+4,y,hw,22,3,white,border);
@@ -2292,7 +2292,7 @@ async function generatePDFFromReport(r,photos){
   y+=27;
 
   // ===== TIPO DE ATIVIDADE =====
-  var tipoH=28;
+  var tipoH=35;
   rrfs(ML,y,CW,tipoH,3,white,border);
   rr(ML,y,13,tipoH,3,navy);
   // Alvo
@@ -2507,7 +2507,7 @@ async function generatePDFFromReport(r,photos){
     sf(7,white,true);doc.text(pg+'/'+tot,W-MR-6,H-MB+8,{align:'center'});
   }
 
-  var fn='Relatorio_CSN_'+(r.proto||('_'+(r.date||'').replace(/[/]/g,'-')))+'.pdf';
+  var fn=(r.proto?r.proto:'Relatorio_CSN_'+(r.date||'sem-data').replace(/[/]/g,'-'))+'.pdf';
   var bl=doc.output('blob');
   if(navigator.share){
     navigator.share({title:'Relatorio CSN',files:[new File([bl],fn,{type:'application/pdf'})]})
