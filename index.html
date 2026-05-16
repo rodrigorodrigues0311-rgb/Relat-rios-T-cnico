@@ -374,6 +374,47 @@ select.fi option{background:#fff}
   width:100%;padding:24px 20px;
   animation:slideUp .25s ease;
 }
+
+/* ── MODO ESCURO ─────────────────────────────────────── */
+body.dark{
+  --g50:#1a1a2e;--g100:#16213e;--g200:#0f3460;--g300:#1a1a2e;
+  --g400:#94a3b8;--g500:#cbd5e1;--g600:#e2e8f0;--g700:#f1f5f9;
+  --g900:#f8fafc;
+  --blue:#60a5fa;--blue-lt:#1e3a5f;
+  background:#0f0f1a;color:#f1f5f9;
+}
+body.dark .screen{background:#0f0f1a;}
+body.dark .dash-card{background:#1a1a2e;border-color:#0f3460;}
+body.dark .rpt-item{background:#1a1a2e;border-color:#0f3460;}
+body.dark .bottom-nav{background:#1a1a2e;border-color:#0f3460;}
+body.dark .fi{background:#1a1a2e;border-color:#0f3460;color:#f1f5f9;}
+body.dark .modal-sh{background:#1a1a2e;}
+body.dark .hd-card{background:#1a1a2e;border-color:#0f3460;}
+body.dark .type-c{background:#1a1a2e;border-color:#0f3460;}
+body.dark .proc-c{background:#1a1a2e;border-color:#0f3460;}
+body.dark .act-item{background:#1a1a2e;border-color:#0f3460;}
+body.dark .abs-item{background:#1a1a2e;}
+body.dark #collab-banner{background:linear-gradient(135deg,#1e3a5f,#1a1a2e);border-color:#0f3460;}
+body.dark .succ-body{background:#1a1a2e;}
+body.dark .rev-item{border-color:#0f3460;}
+body.dark select option{background:#1a1a2e;}
+body.dark .prof-sec{background:#1a1a2e;}
+body.dark .prof-row{background:#1a1a2e;border-color:#0f3460;}
+.dark-toggle{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;cursor:pointer;
+}
+.dark-switch{
+  width:46px;height:26px;border-radius:13px;background:var(--g200);
+  position:relative;transition:background .3s;flex-shrink:0;
+}
+.dark-switch.on{background:var(--blue);}
+.dark-switch::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:transform .3s;
+}
+.dark-switch.on::after{transform:translateX(20px);}
 </style>
 </head>
 <body>
@@ -804,8 +845,12 @@ select.fi option{background:#fff}
       <div class="modal-hd"></div>
       <div class="modal-title">&#9889; Adicionar Atividade</div>
       <div class="form-sec">
-        <label class="form-label">Descricao</label>
-        <textarea class="fi" id="m-desc" rows="4" placeholder="Descreva detalhadamente a atividade..."></textarea>
+        <label class="form-label">Descricao da Atividade *</label>
+        <textarea class="fi" id="m-desc" rows="3" placeholder="Descreva detalhadamente a atividade..."></textarea>
+      </div>
+      <div class="form-sec">
+        <label class="form-label">Equipamento</label>
+        <input type="text" class="fi" id="m-equip" placeholder="Ex: Balanca 05, Inversor VV2...">
       </div>
       <div class="form-sec">
         <label class="form-label">Colaboradores</label>
@@ -1221,6 +1266,7 @@ function getPhPDF(n){
 var MCols=0;
 function openActModal(){
   MCols=0;document.getElementById('m-desc').value='';
+  if(document.getElementById('m-equip'))document.getElementById('m-equip').value='';
   document.getElementById('m-colabs').innerHTML='';addMCol();
   document.getElementById('modal-ov').classList.add('show');
 }
@@ -1258,7 +1304,8 @@ function saveAct(){
   document.getElementById('m-colabs').querySelectorAll('select,input[type=text]').forEach(function(el){
     if(el.value&&el.value.trim()&&el.value!=='__c')cols.push(el.value.trim());
   });
-  S.acts.push({desc:desc,cols:cols});renderActivities();
+  var equip=document.getElementById('m-equip')?document.getElementById('m-equip').value.trim():'';
+  S.acts.push({desc:desc,cols:cols,equip:equip});renderActivities();
   document.getElementById('modal-ov').classList.remove('show');
   autosaveDraft();toast('Atividade adicionada!');
 }
@@ -1281,8 +1328,10 @@ function renderActivities(){
   var el=document.getElementById('act-list');el.innerHTML='';
   S.acts.forEach(function(a,i){
     var d=document.createElement('div');d.className='act-item';
+    var equipTag=a.equip?'<span style="font-size:.72rem;background:var(--blue-lt);color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:600;margin-top:4px;display:inline-block">&#128295; '+a.equip+'</span>':'';
     d.innerHTML='<div class="act-hd"><div class="act-title">'+sa(a.desc).substring(0,60)+(a.desc.length>60?'...':'')+'</div>'
       +'<div class="act-btns"><button class="act-btn del" onclick="rmAct('+i+')">&#128465;</button></div></div>'
+      +equipTag
       +(a.cols.length?makeColabAvatars(a.cols):'');
     el.appendChild(d);
   });
@@ -1422,7 +1471,7 @@ function buildReview(){
     {ic:'&#128197;',lb:'Data',vl:df},
     {ic:'&#128295;',lb:'Tipo',vl:S.tipo||'--'},
     {ic:'&#128100;',lb:'Responsavel',vl:rp+(rc?' - '+rc:'')},
-    {ic:'&#9889;',lb:'Atividades',vl:S.acts.length+' atividade(s)'},
+    {ic:'&#9889;',lb:'Atividades',vl:S.acts.length+' atividade(s) - '+(S.acts.filter(function(a){return a.equip;}).map(function(a){return a.equip;}).join(', ')||'equipamentos nao informados')},
     {ic:'&#128247;',lb:'Fotos',vl:S.photos.length+' foto(s)'},
     {ic:'&#128101;',lb:'Ausencias',vl:S.abss.length?S.abss.length+' ausencia(s)':'Nenhuma'}
   ];
@@ -2269,17 +2318,17 @@ async function generatePDFFromReport(r,photos){
 
   // ===== SUPERVISORES + DDS =====
   var hw=(CW-4)/2;
-  rrfs(ML,y,hw,22,3,white,border);
+  rrfs(ML,y,hw,32,3,white,border);
   // Icone pessoas
   doc.setFillColor(blue[0],blue[1],blue[2]);
   doc.circle(ML+5.5,y+8,2,'F');doc.circle(ML+8.5,y+8,1.7,'F');
   doc.ellipse(ML+5.5,y+12,2.8,1.6,'F');doc.ellipse(ML+8.5,y+12,2.4,1.6,'F');
-  tx('SUPERVISORES / LIDER',ML+14,y+7,9.5,blue,true);
-  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+14,9,text,false);
-  tx('Lider: Edson Jose',ML+14,y+21,9,text,false);
+  tx('SUPERVISORES / LIDER',ML+14,y+8,9.5,blue,true);
+  tx('Supervisores: Rodrigo Lima / Rafael Gomes',ML+14,y+16,9.5,text,false);
+  tx('Lider: Edson Jose',ML+14,y+24,9.5,text,false);
 
   if(r.dds){
-    rrfs(ML+hw+4,y,hw,22,3,white,border);
+    rrfs(ML+hw+4,y,hw,32,3,white,border);
     doc.setFillColor(blue[0],blue[1],blue[2]);
     doc.roundedRect(ML+hw+8,y+4.5,5,7,0.8,0.8,'F');
     doc.setFillColor(white[0],white[1],white[2]);
@@ -2292,7 +2341,7 @@ async function generatePDFFromReport(r,photos){
   y+=27;
 
   // ===== TIPO DE ATIVIDADE =====
-  var tipoH=35;
+  var tipoH=42;
   rrfs(ML,y,CW,tipoH,3,white,border);
   rr(ML,y,13,tipoH,3,navy);
   // Alvo
@@ -2320,7 +2369,7 @@ async function generatePDFFromReport(r,photos){
 
   // ===== AUSENCIAS =====
   var nAus=r.abss&&r.abss.length?r.abss.length:0;
-  var ausH=nAus>0?10+nAus*9+4:20;
+  var ausH=nAus>0?14+nAus*14:22;
   rrfs(ML,y,CW,ausH,3,white,border);
   rr(ML,y,13,ausH,3,navy);
   // Icone pessoas branco
@@ -2345,7 +2394,7 @@ async function generatePDFFromReport(r,photos){
 
   // ===== ATIVIDADES REALIZADAS (resumo) =====
   var nActs=r.acts&&r.acts.length?r.acts.length:0;
-  var actListH=20+(nActs>0?nActs*8:0);
+  var actListH=22+(nActs>0?nActs*11:0);
   rrfs(ML,y,CW,actListH,3,white,border);
   rr(ML,y,13,actListH,3,navy);
   doc.setFillColor(white[0],white[1],white[2]);
@@ -2666,6 +2715,26 @@ function setupRealtimeSync(){
   });
 }
 
+
+// \u2500\u2500 MODO ESCURO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function toggleDark(){
+  var isDark=document.body.classList.toggle('dark');
+  var sw=document.getElementById('dark-sw');
+  if(sw)sw.classList.toggle('on',isDark);
+  try{localStorage.setItem('darkMode',isDark?'1':'0');}catch(e){}
+}
+function loadDarkMode(){
+  try{
+    var dm=localStorage.getItem('darkMode');
+    if(dm==='1'){
+      document.body.classList.add('dark');
+      var sw=document.getElementById('dark-sw');
+      if(sw)sw.classList.add('on');
+    }
+  }catch(e){}
+}
+// Carrega modo escuro imediatamente
+loadDarkMode();
 </script>
 </body>
 </html>
