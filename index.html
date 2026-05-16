@@ -2344,15 +2344,6 @@ async function generatePDFFromReport(r,photos){
   y+=ausH+5;
 
   // ===== ATIVIDADES REALIZADAS (resumo) =====
-  chk(20);
-  rrfs(ML,y,CW,20,3,white,border);
-  rr(ML,y,13,20,3,navy);
-  // Icone clipboard branco
-  doc.setFillColor(white[0],white[1],white[2]);
-  doc.roundedRect(ML+3.5,y+5.5,6,9,1,1,'F');
-  doc.setFillColor(navy[0],navy[1],navy[2]);
-  doc.rect(ML+4.5,y+7.5,4,0.7,'F');doc.rect(ML+4.5,y+9.5,4,0.7,'F');doc.rect(ML+4.5,y+11.5,3,0.7,'F');
-
   var nActs=r.acts&&r.acts.length?r.acts.length:0;
   var actListH=20+(nActs>0?nActs*8:0);
   rrfs(ML,y,CW,actListH,3,white,border);
@@ -2373,7 +2364,7 @@ async function generatePDFFromReport(r,photos){
       ay2+=8;
     });
   }
-  y+=actListH+4;
+  y+=actListH+6;
 
   putFoot();
 
