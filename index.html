@@ -552,16 +552,11 @@ body.dark .stat-lbl{color:#94a3b8;}
   <div style="display:flex;align-items:center;gap:10px">
     <div style="width:36px;height:36px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">&#128101;</div>
     <div style="flex:1;min-width:0">
-      <div style="font-size:.82rem;font-weight:700;color:var(--blue)" id="fb-status-title">Conectando ao Firebase...</div>
-      <div style="font-size:.72rem;color:var(--g500);margin-top:1px" id="supa-status-label">Aguarde</div>
-    <div style="font-size:.6rem;color:var(--g400);margin-top:2px">v20260516-023450</div>
+      <div style="font-size:.82rem;font-weight:700;color:var(--blue)" id="fb-status-title">Modo Colaborativo</div>
+      <div style="font-size:.72rem;color:var(--g500)" id="supa-status-label">Conectando...</div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-      <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#f57f17;box-shadow:0 0 8px #f57f17"></div>
-      <button onclick="fbTestManual()" style="padding:5px 10px;background:var(--blue);border:none;border-radius:6px;color:#fff;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">Testar</button>
-    </div>
+    <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#f57f17;box-shadow:0 0 8px #f57f17;flex-shrink:0"></div>
   </div>
-  <div id="fb-test-result" style="margin-top:6px;font-size:.72rem;color:var(--g700);word-break:break-all;display:none"></div>
 </div>
 <div class="dash-grid">
         <div class="dc blue" onclick="startReport()">
@@ -1462,7 +1457,7 @@ function autosaveDraft(){
     hh:document.getElementById('f-hh')?document.getElementById('f-hh').value:'',
     om:document.getElementById('f-om')?document.getElementById('f-om').value:'',
     dds:document.getElementById('f-dds')?document.getElementById('f-dds').value:'',
-    equip:document.getElementById('f-equip')?document.getElementById('f-equip').value:''};
+    equip:''};
   document.querySelectorAll('#dev-list textarea').forEach(function(t){if(t.value.trim())d.devs.push(t.value);});
   document.querySelectorAll('#pend-list textarea').forEach(function(t){if(t.value.trim())d.pends.push(t.value);});
   try{localStorage.setItem(SK.draft,JSON.stringify(d));S.hasDraft=true;updateDraftBadge();}catch(e){}
@@ -1503,7 +1498,7 @@ function applyDraft(d){
   S.tipo=d.tipo||'';S.typeKey=d.typeKey||'';
   var fields={
     'f-data':'data','f-hh':'hh','f-om':'om','f-dds':'dds',
-    'f-equip':'equip','f-resp':'resp','f-cargo':'cargo'
+    'f-resp':'resp','f-cargo':'cargo'
   };
   Object.keys(fields).forEach(function(id){
     var el=document.getElementById(id);if(el&&d[fields[id]])el.value=d[fields[id]];
@@ -1570,7 +1565,7 @@ function sendReport(){
     hh:document.getElementById('f-hh').value||'',
     om:document.getElementById('f-om').value||'',
     dds:document.getElementById('f-dds').value||'',
-    equip:document.getElementById('f-equip').value||'',
+    equip:S.acts.length>0&&S.acts[0].equip?S.acts[0].equip:'',
     acts:S.acts.slice(),abss:S.abss.slice(),devs:devs,pends:pends,
     photoCount:S.photos.length,
     procs:Array.from(document.querySelectorAll('input[name="proc"]:checked')).map(function(c){return c.value;})
@@ -1760,14 +1755,18 @@ var FB_POLL = null;
 function fbInit(){
   console.log('Iniciando Firebase...', FB_URL);
   // Testa com GET simples primeiro (mais confiavel)
-  fetch(FB_URL + '/.json?shallow=true')
+  fetch(FB_URL + '/ping.json', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({t: Date.now()})
+    })
     .then(function(r){
       console.log('Firebase resposta status:', r.status);
       if(!r.ok) throw new Error('Status ' + r.status);
       return r.json();
     })
     .then(function(data){
-      console.log('Firebase OK! Dados:', JSON.stringify(data).substring(0,50));
+      console.log('Firebase OK!');
       FB_OK = true;
       var cb = document.getElementById('collab-banner');
       if(cb) cb.style.display = 'flex';
@@ -2173,7 +2172,7 @@ function makeWPP(){
     hh:document.getElementById('f-hh').value||'',
     om:document.getElementById('f-om').value||'',
     dds:document.getElementById('f-dds').value||'',
-    equip:document.getElementById('f-equip').value||'',
+    equip:S.acts.length>0&&S.acts[0].equip?S.acts[0].equip:'',
     acts:S.acts,abss:S.abss,
     devs:Array.from(document.querySelectorAll('#dev-list textarea')).map(function(t){return t.value;}).filter(Boolean),
     pends:Array.from(document.querySelectorAll('#pend-list textarea')).map(function(t){return t.value.toUpperCase();}).filter(Boolean),
@@ -2202,7 +2201,7 @@ async function makePDF(){
     hh:document.getElementById('f-hh').value||'',
     om:document.getElementById('f-om').value||'',
     dds:document.getElementById('f-dds').value||'',
-    equip:document.getElementById('f-equip').value||'',
+    equip:'',
     acts:S.acts,abss:S.abss,
     devs:Array.from(document.querySelectorAll('#dev-list textarea')).map(function(t){return t.value;}).filter(Boolean),
     pends:Array.from(document.querySelectorAll('#pend-list textarea')).map(function(t){return t.value.toUpperCase();}).filter(Boolean),
@@ -2769,7 +2768,7 @@ function confirmDeleteReport(){
 // \u2500\u2500 EDI\u00c7\u00c3O EM TEMPO REAL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Salva o rascunho no Firebase a cada mudan\u00e7a nos campos principais
 function setupRealtimeSync(){
-  var fields=['f-data','f-hh','f-om','f-dds','f-equip','f-resp','f-cargo'];
+  var fields=['f-data','f-hh','f-om','f-dds','f-resp','f-cargo'];
   fields.forEach(function(id){
     var el=document.getElementById(id);
     if(!el)return;
