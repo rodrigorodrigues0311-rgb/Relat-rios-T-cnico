@@ -482,6 +482,9 @@ body.dark .stat-lbl{color:#94a3b8;}
   background:#fff;transition:transform .3s;
 }
 .dark-switch.on::after{transform:translateX(20px);}
+
+#scr-dash{overscroll-behavior-y:contain;}
+#scr-dash>.scroll{overscroll-behavior-y:contain;}
 </style>
 </head>
 <body>
@@ -1771,8 +1774,10 @@ function fbInit(){
       if(title) title.textContent = 'Modo Colaborativo Ativo';
       var sub = document.getElementById('supa-status-label');
       if(sub) sub.textContent = 'Sincronizado com a equipe';
-      var dot=document.getElementById('sync-dot');
-      if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
+      // Atualiza TODOS os elementos sync-dot
+      document.querySelectorAll('#sync-dot, .sync-dot').forEach(function(d){
+        d.style.cssText='width:9px;height:9px;border-radius:50%;background:#43a047;box-shadow:0 0 10px #43a047;flex-shrink:0;transition:all .3s';
+      });
       toast('Firebase conectado!');
       fbStartPolling();
       setTimeout(fbLoadHistory, 500);
@@ -2672,12 +2677,15 @@ async function generatePDFFromReport(r,photos){
   }
 
   function ptrStart(e){
-    var scr=document.getElementById('scr-dash');
-    if(!scr||!scr.classList.contains('active'))return;
+    // Verifica se est\u00e1 no dashboard
+    var dash=document.getElementById('scr-dash');
+    if(!dash||!dash.classList.contains('active'))return;
     if(S&&S.inReport)return;
-    var scrollEl=scr.querySelector('.scroll')||scr;
-    if(scrollEl.scrollTop>2)return;
+    // Permite PTR apenas quando scroll est\u00e1 no topo
+    var scrollEl=dash.querySelector('.scroll');
+    if(scrollEl&&scrollEl.scrollTop>2)return;
     startY=e.touches[0].clientY;
+    currY=startY;
     pulling=true;
   }
 
@@ -2748,9 +2756,17 @@ async function generatePDFFromReport(r,photos){
   }
 
   window._initPTR=function(){
+    // Registra no document para capturar todos os toques
     document.addEventListener('touchstart',ptrStart,{passive:true});
     document.addEventListener('touchmove',ptrMove,{passive:false});
     document.addEventListener('touchend',ptrEnd,{passive:true});
+    // Tamb\u00e9m registra no header do dash (\u00e1rea que n\u00e3o faz scroll)
+    var dh=document.querySelector('.dash-head');
+    if(dh){
+      dh.addEventListener('touchstart',ptrStart,{passive:true});
+      dh.addEventListener('touchmove',ptrMove,{passive:false});
+      dh.addEventListener('touchend',ptrEnd,{passive:true});
+    }
   };
 })();
 
