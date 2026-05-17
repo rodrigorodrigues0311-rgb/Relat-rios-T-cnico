@@ -557,7 +557,7 @@ body.dark .stat-lbl{color:#94a3b8;}
       <div style="font-size:.82rem;font-weight:700;color:var(--blue)" id="fb-status-title">Modo Colaborativo</div>
       <div style="font-size:.72rem;color:var(--g500)" id="supa-status-label">Conectando...</div>
     </div>
-    <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#f57f17;box-shadow:0 0 8px #f57f17;flex-shrink:0"></div>
+    <div id="sync-dot" style="width:9px;height:9px;border-radius:50%;background:#94a3b8;flex-shrink:0"></div>
   </div>
 </div>
 <div class="dash-grid">
@@ -1771,19 +1771,8 @@ function fbInit(){
       if(title) title.textContent = 'Modo Colaborativo Ativo';
       var sub = document.getElementById('supa-status-label');
       if(sub) sub.textContent = 'Sincronizado com a equipe';
-      var dot = document.getElementById('sync-dot');
-      if(dot){
-        dot.style.background='#43a047';
-        dot.style.boxShadow='0 0 8px #43a047';
-        dot.style.animation='pulse-green 2s infinite';
-      }
-      // Adiciona CSS de pulse verde se nao existir
-      if(!document.getElementById('pulse-css')){
-        var ps=document.createElement('style');
-        ps.id='pulse-css';
-        ps.textContent='@keyframes pulse-green{0%,100%{box-shadow:0 0 6px #43a047;}50%{box-shadow:0 0 14px #43a047;}}';
-        document.head.appendChild(ps);
-      }
+      var dot=document.getElementById('sync-dot');
+      if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
       toast('Firebase conectado!');
       fbStartPolling();
       setTimeout(fbLoadHistory, 500);
@@ -2673,65 +2662,61 @@ async function generatePDFFromReport(r,photos){
   }catch(pdfErr){console.error('PDF erro:',pdfErr);toast('Erro PDF: '+(pdfErr.message||String(pdfErr)).substring(0,50));}
 }
 
-// \u2500\u2500 PULL TO REFRESH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500 PULL TO REFRESH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 (function(){
-  var startY=0, currY=0, pulling=false, threshold=70;
-  var ind=null;
+  var startY=0,currY=0,pulling=false,threshold=65,ind=null;
 
   function getInd(){
     if(!ind)ind=document.getElementById('ptr-indicator');
     return ind;
   }
 
-  function onTouchStart(e){
-    // So ativa no dashboard e no topo da pagina
-    var active=document.querySelector('.screen.active');
-    if(!active||active.id!=='scr-dash')return;
+  function ptrStart(e){
+    var scr=document.getElementById('scr-dash');
+    if(!scr||!scr.classList.contains('active'))return;
     if(S&&S.inReport)return;
-    var scr=active.querySelector('.scroll');
-    if(scr&&scr.scrollTop>5)return;
+    var scrollEl=scr.querySelector('.scroll')||scr;
+    if(scrollEl.scrollTop>2)return;
     startY=e.touches[0].clientY;
     pulling=true;
   }
 
-  function onTouchMove(e){
+  function ptrMove(e){
     if(!pulling)return;
     currY=e.touches[0].clientY;
     var diff=currY-startY;
-    if(diff<10)return;
-    var el=getInd();
-    if(!el)return;
-    // Limita o arrasto
+    if(diff<=0){pulling=false;return;}
+    var el=getInd();if(!el)return;
     var pull=Math.min(diff,threshold+30);
     var prog=Math.min(diff/threshold,1);
     el.style.transform='translateX(-50%) translateY('+(pull-60)+'px)';
     el.style.opacity=String(Math.min(prog*1.5,1));
+    el.innerHTML=diff>=threshold?'\u21bb':'\u2193';
+    el.style.background=diff>=threshold?'#43a047':'var(--blue)';
     el.classList.toggle('ready',diff>=threshold);
-    el.innerHTML=diff>=threshold?'&#8635;':'&#8595;';
-    el.classList.remove('loading');
-    if(diff>20)e.preventDefault();
+    if(diff>10)e.preventDefault();
   }
 
-  function onTouchEnd(){
+  function ptrEnd(){
     if(!pulling)return;
     pulling=false;
     var diff=currY-startY;
     var el=getInd();
-    if(!el)return;
+    if(!el){startY=0;currY=0;return;}
     if(diff>=threshold){
-      // Executa refresh
-      el.classList.add('loading');
-      el.classList.remove('ready');
-      el.innerHTML='&#8635;';
-      el.style.transform='translateX(-50%) translateY(10px)';
+      el.style.transform='translateX(-50%) translateY(8px)';
       el.style.opacity='1';
-      doRefresh(function(){
+      el.innerHTML='\u21bb';
+      el.style.animation='ptr-spin .7s linear infinite';
+      ptrDoRefresh(function(){
         el.style.transform='translateX(-50%) translateY(-60px)';
         el.style.opacity='0';
-        el.classList.remove('loading','ready');
-        el.innerHTML='&#8595;';
+        el.style.animation='';
+        el.innerHTML='\u2193';
+        el.style.background='var(--blue)';
+        el.classList.remove('ready');
       });
-    }else{
+    } else {
       el.style.transform='translateX(-50%) translateY(-60px)';
       el.style.opacity='0';
       el.classList.remove('ready');
@@ -2739,42 +2724,35 @@ async function generatePDFFromReport(r,photos){
     startY=0;currY=0;
   }
 
-  function doRefresh(cb){
-    // Atualiza dados
+  function ptrDoRefresh(cb){
     try{updateDashDate();}catch(e){}
     try{updateDashHeader();}catch(e){}
-    var proms=[];
     if(typeof fbLoadHistory==='function'&&FB_OK){
-      proms.push(fbLoadHistory());
+      try{fbLoadHistory();}catch(e){}
     } else {
       try{_loadHistLocal();renderDashRecent();}catch(e){}
     }
-    // Verifica rascunho via SDK
-    try{
-      if(FB_OK&&window._fbDB){
+    if(FB_OK&&window._fbDB){
+      try{
         window._fbDB.ref('rascunho').once('value').then(function(snap){
           var d=snap.val();
-          if(d&&d.step){S.hasDraft=true;}
-          else{S.hasDraft=false;}
+          S.hasDraft=!!(d&&d.step);
           updateDraftBadge();
         }).catch(function(){});
-      }
-    }catch(e){}
-    // Aguarda 800ms e fecha o indicador
+      }catch(e){}
+    }
     setTimeout(function(){
       try{renderDashRecent();}catch(e){}
       if(cb)cb();
-    },800);
+    },1000);
   }
 
-  // Expoe funcao para ser chamada pelo init()
-  window._initPTR = function(){
-    document.addEventListener('touchstart',onTouchStart,{passive:true});
-    document.addEventListener('touchmove',onTouchMove,{passive:false});
-    document.addEventListener('touchend',onTouchEnd,{passive:true});
+  window._initPTR=function(){
+    document.addEventListener('touchstart',ptrStart,{passive:true});
+    document.addEventListener('touchmove',ptrMove,{passive:false});
+    document.addEventListener('touchend',ptrEnd,{passive:true});
   };
 })();
-
 
 // \u2500\u2500 DELETAR RELAT\u00d3RIO \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function askDeleteReport(){
