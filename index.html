@@ -1772,7 +1772,18 @@ function fbInit(){
       var sub = document.getElementById('supa-status-label');
       if(sub) sub.textContent = 'Sincronizado com a equipe';
       var dot = document.getElementById('sync-dot');
-      if(dot){dot.style.background='#43a047';dot.style.boxShadow='0 0 8px #43a047';}
+      if(dot){
+        dot.style.background='#43a047';
+        dot.style.boxShadow='0 0 8px #43a047';
+        dot.style.animation='pulse-green 2s infinite';
+      }
+      // Adiciona CSS de pulse verde se nao existir
+      if(!document.getElementById('pulse-css')){
+        var ps=document.createElement('style');
+        ps.id='pulse-css';
+        ps.textContent='@keyframes pulse-green{0%,100%{box-shadow:0 0 6px #43a047;}50%{box-shadow:0 0 14px #43a047;}}';
+        document.head.appendChild(ps);
+      }
       toast('Firebase conectado!');
       fbStartPolling();
       setTimeout(fbLoadHistory, 500);
@@ -2673,10 +2684,12 @@ async function generatePDFFromReport(r,photos){
   }
 
   function onTouchStart(e){
-    // So ativa se estiver no topo da pagina e nao estiver em relatorio
-    var scr=document.querySelector('.screen.active .scroll');
-    if(scr&&scr.scrollTop>0)return;
+    // So ativa no dashboard e no topo da pagina
+    var active=document.querySelector('.screen.active');
+    if(!active||active.id!=='scr-dash')return;
     if(S&&S.inReport)return;
+    var scr=active.querySelector('.scroll');
+    if(scr&&scr.scrollTop>5)return;
     startY=e.touches[0].clientY;
     pulling=true;
   }
@@ -2736,15 +2749,15 @@ async function generatePDFFromReport(r,photos){
     } else {
       try{_loadHistLocal();renderDashRecent();}catch(e){}
     }
-    // Tambem verifica rascunho
+    // Verifica rascunho via SDK
     try{
-      if(FB_OK){
-        fetch(FB_URL+'/rascunho.json')
-          .then(function(r){return r.json();})
-          .then(function(d){
-            if(d&&d.step){S.hasDraft=true;updateDraftBadge();}
-            else{S.hasDraft=false;updateDraftBadge();}
-          }).catch(function(){});
+      if(FB_OK&&window._fbDB){
+        window._fbDB.ref('rascunho').once('value').then(function(snap){
+          var d=snap.val();
+          if(d&&d.step){S.hasDraft=true;}
+          else{S.hasDraft=false;}
+          updateDraftBadge();
+        }).catch(function(){});
       }
     }catch(e){}
     // Aguarda 800ms e fecha o indicador
